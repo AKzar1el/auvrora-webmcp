@@ -178,9 +178,11 @@ export function initializeLoopFixApp() {
     if (state.verification) {
       let fixed = 0;
       let stillPresent = 0;
+      let notVerifiable = 0;
       for (const result of state.verification.results) {
         if (result.status === "fixed") fixed += 1;
-        if (result.status === "still_present") stillPresent += 1;
+        else if (result.status === "still_present") stillPresent += 1;
+        else notVerifiable += 1;
         const finding = audit.findings.find((item) => item.id === result.findingId);
         const row = document.createElement("div");
         row.className = "verification-row";
@@ -192,7 +194,7 @@ export function initializeLoopFixApp() {
         appendElements(row, title, status);
         verificationList.appendChild(row);
       }
-      verificationSummary.textContent = `${fixed} fixed · ${stillPresent} still present`;
+      verificationSummary.textContent = `${fixed} fixed · ${stillPresent} still present · ${notVerifiable} not verifiable`;
     }
   };
 
@@ -244,7 +246,8 @@ export function initializeLoopFixApp() {
       const results = await controller.verifyFixScope(operation.signal);
       const fixed = results.filter((result) => result.status === "fixed").length;
       const stillPresent = results.filter((result) => result.status === "still_present").length;
-      announce(`Verification completed: ${fixed} fixed, ${stillPresent} still present.`);
+      const notVerifiable = results.filter((result) => result.status === "not_verifiable").length;
+      announce(`Verification completed: ${fixed} fixed, ${stillPresent} still present, ${notVerifiable} not verifiable.`);
     } catch (error) {
       if (operation.signal.aborted) announce("Verification cancelled.");
       else announce(error instanceof Error ? error.message : "Verification could not be completed.");
