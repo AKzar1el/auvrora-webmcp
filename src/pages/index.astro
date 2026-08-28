@@ -1,0 +1,64 @@
+---
+import AuditForm from "../components/AuditForm.astro";
+import FindingsPanel from "../components/FindingsPanel.astro";
+import FixScopePanel from "../components/FixScopePanel.astro";
+import VerificationPanel from "../components/VerificationPanel.astro";
+import "../styles/global.css";
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#111214" />
+    <title>LoopFix WebMCP</title>
+    <meta name="description" content="A human-agent WebMCP workflow for deterministic technical SEO auditing and fix verification." />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="LoopFix WebMCP home">
+        <span class="brand-mark" aria-hidden="true">LF</span>
+        <span>LoopFix <strong>WebMCP</strong></span>
+      </a>
+      <a class="header-link" href="https://github.com/AKzar1el/loopfix-mcp" rel="noreferrer">GitHub ↗</a>
+    </header>
+
+    <main id="app">
+      <section class="hero" aria-labelledby="hero-title">
+        <p class="eyebrow">Human + agent remediation loop</p>
+        <h1 id="hero-title">Audit. Scope. Fix. Verify.</h1>
+        <p class="hero-copy">LoopFix exposes deterministic SEO audit work as native WebMCP tools while keeping every state change visible to the person in the browser.</p>
+        <div class="flow" aria-label="LoopFix workflow">
+          <span>Audit</span><span aria-hidden="true">→</span><span>Inspect</span><span aria-hidden="true">→</span><span>Scope</span><span aria-hidden="true">→</span><span>Verify</span>
+        </div>
+      </section>
+
+      <AuditForm />
+
+      <div class="workspace-grid">
+        <FindingsPanel />
+        <FixScopePanel />
+      </div>
+
+      <VerificationPanel />
+
+      <section class="explain" aria-labelledby="explain-heading">
+        <p class="eyebrow">Why WebMCP</p>
+        <h2 id="explain-heading">One application state, two operators</h2>
+        <p>Humans use the interface. Agents use structured tools. Both operate on the same active audit, finding IDs, fix scope, and verification state—without scraping buttons or receiving raw page HTML.</p>
+      </section>
+
+      <p id="app-live-region" class="sr-only" aria-live="polite" aria-atomic="true"></p>
+    </main>
+
+    <footer class="site-footer">
+      <span>Open-source challenge build · MIT</span>
+      <span>Deterministic checks, no AI backend</span>
+    </footer>
+
+    <script>
+      import { initializeLoopFixApp } from "../scripts/loopfix-client.ts";
+      initializeLoopFixApp();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "name": "loopfix-webmcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A human-agent WebMCP workflow for deterministic technical SEO auditing and fix verification.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "check": "wrangler types --check && astro check",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "astro build",
+    "verify": "npm run check && npm test && npm run build",
+    "deploy": "wrangler deploy",
+    "generate:types": "wrangler types"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "14.2.5",
+    "astro": "7.2.9"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11",
+    "webmcp-types": "0.1.3",
+    "wrangler": "4.127.1",
+    "@types/node": "22.20.1"
+  }
+}
