@@ -63,17 +63,40 @@ async function readBoundedText(response: Response): Promise<string> {
   }
 }
 
-async function requestPage(url: URL, fetchImpl: typeof fetch, parentSignal?: AbortSignal): Promise<Response> {
+type PendingRequest = {
+  response: Response;
+  controller: AbortController;
+  timeoutReason: DOMException;
+  parentSignal?: AbortSignal;
+  cleanup: () => void;
+};
+
+function requestAbortError(request: Pick<PendingRequest, "controller" | "timeoutReason" | "parentSignal">): Error | null {
+  if (request.parentSignal?.aborted) return abortError(request.parentSignal.reason);
+  if (request.controller.signal.aborted && (
+    request.controller.signal.reason === request.timeoutReason ||
+    (request.controller.signal.reason as { name?: string } | undefined)?.name === "TimeoutError"
+  )) {
+    return new AuditError("request_timeout", "The page request timed out.", 504);
+  }
+  return null;
+}
+
+async function requestPage(url: URL, fetchImpl: typeof fetch, parentSignal?: AbortSignal): Promise<PendingRequest> {
   const controller = new AbortController();
   const timeoutReason = new DOMException("The page request timed out.", "TimeoutError");
   const timeout = setTimeout(() => controller.abort(timeoutReason), REQUEST_TIMEOUT_MS);
   const abortFromParent = () => controller.abort(parentSignal?.reason);
+  const cleanup = () => {
+    clearTimeout(timeout);
+    parentSignal?.removeEventListener("abort", abortFromParent);
+  };
 
   if (parentSignal?.aborted) abortFromParent();
   else parentSignal?.addEventListener("abort", abortFromParent, { once: true });
 
   try {
-    return await fetchImpl(url.href, {
+    const response = await fetchImpl(url.href, {
       method: "GET",
       redirect: "manual",
       headers: {
@@ -82,18 +105,12 @@ async function requestPage(url: URL, fetchImpl: typeof fetch, parentSignal?: Abo
       },
       signal: controller.signal,
     });
+    return { response, controller, timeoutReason, parentSignal, cleanup };
   } catch (error) {
-    if (parentSignal?.aborted) throw abortError(parentSignal.reason);
-    if (controller.signal.aborted && controller.signal.reason === timeoutReason) {
-      throw new AuditError("request_timeout", "The page request timed out.", 504);
-    }
-    if (controller.signal.aborted && (controller.signal.reason as { name?: string } | undefined)?.name === "TimeoutError") {
-      throw new AuditError("request_timeout", "The page request timed out.", 504);
-    }
+    cleanup();
+    const mapped = requestAbortError({ controller, timeoutReason, parentSignal });
+    if (mapped) throw mapped;
     throw new AuditError("upstream_error", "The page request failed.", 502);
-  } finally {
-    clearTimeout(timeout);
-    parentSignal?.removeEventListener("abort", abortFromParent);
   }
 }
 
@@ -106,61 +123,72 @@ export async function fetchPublicPage(input: string, options: FetchOptions = {})
   const visited = new Set([current.href]);
 
   for (let redirects = 0; ; redirects += 1) {
-    const response = await requestPage(current, fetchImpl, options.signal);
+    const request = await requestPage(current, fetchImpl, options.signal);
+    const { response } = request;
 
-    if (REDIRECT_STATUSES.has(response.status)) {
-      const location = response.headers.get("location");
-      if (!location) {
+    try {
+      if (REDIRECT_STATUSES.has(response.status)) {
+        const location = response.headers.get("location");
+        if (!location) {
+          await cancelBody(response);
+          throw new AuditError("invalid_redirect", "The page returned a redirect without a Location header.", 502);
+        }
+        if (redirects >= MAX_REDIRECTS) {
+          await cancelBody(response);
+          throw new AuditError("redirect_chain_too_long", "The page redirected too many times.", 400);
+        }
+
+        let resolved: URL;
+        try {
+          resolved = new URL(location, current);
+        } catch {
+          await cancelBody(response);
+          throw new AuditError("invalid_redirect", "The page returned an invalid redirect target.", 502);
+        }
+
+        let next: URL;
+        try {
+          next = parsePublicTarget(resolved.href);
+        } catch (error) {
+          await cancelBody(response);
+          throw error;
+        }
         await cancelBody(response);
-        throw new AuditError("invalid_redirect", "The page returned a redirect without a Location header.", 502);
-      }
-      if (redirects >= MAX_REDIRECTS) {
-        await cancelBody(response);
-        throw new AuditError("redirect_chain_too_long", "The page redirected too many times.", 400);
+
+        if (visited.has(next.href)) {
+          throw new AuditError("redirect_loop", "The page returned a redirect loop.", 400);
+        }
+        visited.add(next.href);
+        current = next;
+        continue;
       }
 
-      let resolved: URL;
-      try {
-        resolved = new URL(location, current);
-      } catch {
+      if (!response.ok) {
         await cancelBody(response);
-        throw new AuditError("invalid_redirect", "The page returned an invalid redirect target.", 502);
+        throw new AuditError("upstream_error", `The page returned HTTP ${response.status}.`, 502);
       }
 
-      let next: URL;
-      try {
-        next = parsePublicTarget(resolved.href);
-      } catch (error) {
+      const contentType = response.headers.get("content-type") ?? "";
+      if (!/^(?:text\/html|application\/xhtml\+xml)(?:\s*;|$)/i.test(contentType)) {
         await cancelBody(response);
-        throw error;
+        throw new AuditError("not_html", "The target did not return an HTML document.", 415);
       }
-      await cancelBody(response);
 
-      if (visited.has(next.href)) {
-        throw new AuditError("redirect_loop", "The page returned a redirect loop.", 400);
-      }
-      visited.add(next.href);
-      current = next;
-      continue;
+      const html = await readBoundedText(response);
+      const mapped = requestAbortError(request);
+      if (mapped) throw mapped;
+      return {
+        requestedUrl,
+        canonicalUrl: current.href,
+        html,
+        fetchedAt: now().toISOString(),
+      };
+    } catch (error) {
+      const mapped = requestAbortError(request);
+      if (mapped) throw mapped;
+      throw error;
+    } finally {
+      request.cleanup();
     }
-
-    if (!response.ok) {
-      await cancelBody(response);
-      throw new AuditError("upstream_error", `The page returned HTTP ${response.status}.`, 502);
-    }
-
-    const contentType = response.headers.get("content-type") ?? "";
-    if (!/^(?:text\/html|application\/xhtml\+xml)(?:\s*;|$)/i.test(contentType)) {
-      await cancelBody(response);
-      throw new AuditError("not_html", "The target did not return an HTML document.", 415);
-    }
-
-    const html = await readBoundedText(response);
-    return {
-      requestedUrl,
-      canonicalUrl: current.href,
-      html,
-      fetchedAt: now().toISOString(),
-    };
   }
 }
