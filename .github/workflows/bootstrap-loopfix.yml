@@ -30,8 +30,19 @@ jobs:
           rm -rf .bootstrap
           rm -f .github/workflows/bootstrap-loopfix.yml
 
-      - name: Align TypeScript with Astro check peer range
-        run: npm pkg set devDependencies.typescript=6.0.3
+      - name: Align current Astro and TypeScript configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm pkg set devDependencies.typescript=6.0.3
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'wrangler.jsonc';
+          const config = JSON.parse(fs.readFileSync(path, 'utf8'));
+          config.main = '@astrojs/cloudflare/entrypoints/server';
+          config.compatibility_flags = [...new Set([...(config.compatibility_flags || []), 'global_fetch_strictly_public'])];
+          fs.writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`);
+          NODE
 
       - name: Generate dependency lockfile
         run: npm install --package-lock-only --ignore-scripts
