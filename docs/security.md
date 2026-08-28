@@ -8,6 +8,8 @@ The server accepts only `http:` and `https:` targets on standard ports. It rejec
 
 Redirects are handled manually. Every redirect target is parsed and checked again before another request is issued. Redirect loops and chains beyond three hops are rejected.
 
+The Worker also enables Cloudflare's `global_fetch_strictly_public` compatibility flag, which makes global `fetch()` behave as if it originates on the public Internet. This is defense in depth; the application still performs its own URL and redirect validation.
+
 ### DNS rebinding limitation
 
 Application-level hostname validation cannot prove that a public hostname will always resolve to a public address. LoopFix therefore does **not** claim complete DNS-rebinding prevention from string validation alone. Cloudflare Workers' network/runtime boundary provides defense in depth, while the application independently rejects literal private targets and suspicious hostname classes.
@@ -19,7 +21,7 @@ LoopFix never accepts target credentials, arbitrary request headers, cookies, re
 - request JSON body: 4 KiB maximum;
 - URL: 2,048 characters maximum;
 - redirects: three maximum;
-- fetch timeout: 12 seconds per request;
+- network deadline: 12 seconds per request, including response-body consumption;
 - fetched HTML body: 2 MiB maximum;
 - accepted content types: `text/html` and `application/xhtml+xml`.
 
@@ -45,9 +47,11 @@ The CSP is intentionally narrow and will only be adjusted if production browser 
 
 ## Rate limiting and privacy
 
-The production Worker uses Cloudflare's Rate Limiting binding at a target of 10 audit starts per minute per derived anonymous key. The raw `CF-Connecting-IP` value is not used as the limiter key; LoopFix hashes the endpoint name, UTC day, and address before calling the binding.
+The production Worker uses Cloudflare's Rate Limiting binding at a target of 10 audit starts per minute per derived non-raw key. The raw `CF-Connecting-IP` value is not used as the limiter key; LoopFix hashes the endpoint name, UTC day, and address before calling the binding.
 
-This is coarse abuse protection, not identity or billing. Shared public IP addresses may group unrelated users. Application code does not persist the raw address or the derived key.
+This transformation reduces propagation of the raw address into the limiter key, but it is **not cryptographic anonymization**: IP addresses have a small enough search space that a deterministic hash can potentially be guessed. The key is used only as coarse abuse control; application code does not persist or log the raw address or derived key.
+
+This limiter is not identity, billing, or exact accounting. Shared public IP addresses may group unrelated users, and Cloudflare's Workers Rate Limiting API is intentionally approximate and location-scoped.
 
 ## Data retention
 
