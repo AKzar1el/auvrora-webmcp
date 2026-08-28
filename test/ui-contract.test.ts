@@ -33,6 +33,12 @@ describe("human UI source contract", () => {
     expect(combined.includes("<label for=\"loopfix-url\"")).toBeTruthy();
   });
 
+  it("surfaces not-verifiable verification outcomes in human-facing summaries", async () => {
+    const client = await source("src/scripts/loopfix-client.ts");
+    expect(client.includes("notVerifiable")).toBeTruthy();
+    expect(client.includes("not verifiable")).toBeTruthy();
+  });
+
   it("renders remote-derived data without innerHTML", async () => {
     const client = await source("src/scripts/loopfix-client.ts");
     expect(client.includes("innerHTML")).toBeFalsy();
