@@ -30,6 +30,9 @@ jobs:
           rm -rf .bootstrap
           rm -f .github/workflows/bootstrap-loopfix.yml
 
+      - name: Align TypeScript with Astro check peer range
+        run: npm pkg set devDependencies.typescript=6.0.3
+
       - name: Generate dependency lockfile
         run: npm install --package-lock-only --ignore-scripts
 
