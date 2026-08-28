@@ -118,6 +118,7 @@ export async function handleAuditRequest(request: Request, runtime: AuditRuntime
     const page = await fetchPublicPage(body.url, {
       fetchImpl: runtime.fetchImpl,
       now,
+      signal: request.signal,
     });
     return json(analyzePage(page) as unknown as JsonObject);
   } catch (error) {
