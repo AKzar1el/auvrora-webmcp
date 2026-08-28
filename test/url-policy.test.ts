@@ -13,6 +13,7 @@ function expectCode(input: unknown, code: string) {
 describe("parsePublicTarget", () => {
   it("accepts and normalizes a public HTTPS URL", () => {
     expect(parsePublicTarget("https://EXAMPLE.org/a#x").href).toBe("https://example.org/a");
+    expect(parsePublicTarget("http://192.0.3.1/").href).toBe("http://192.0.3.1/");
   });
 
   it("accepts standard HTTP and HTTPS ports", () => {
@@ -45,8 +46,10 @@ describe("parsePublicTarget", () => {
       "http://127.0.0.1/",
       "http://169.254.169.254/",
       "http://172.16.0.1/",
-      "http://192.168.1.1/",
+      "http://192.0.0.1/",
       "http://192.0.2.1/",
+      "http://192.88.99.1/",
+      "http://192.168.1.1/",
       "http://198.18.0.1/",
       "http://198.51.100.1/",
       "http://203.0.113.1/",
