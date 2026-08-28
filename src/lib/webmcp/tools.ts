@@ -2,7 +2,7 @@ import type { LoopFixController } from "../app/controller.ts";
 import type { Severity } from "../audit/types.ts";
 import { LOOPFIX_TOOL_SCHEMAS } from "./schemas.ts";
 
-export type ToolExecutionOptions = { signal: AbortSignal };
+export type ToolExecutionOptions = { signal?: AbortSignal };
 
 export type LoopFixToolDefinition = {
   name: keyof typeof LOOPFIX_TOOL_SCHEMAS;
@@ -13,7 +13,7 @@ export type LoopFixToolDefinition = {
     readOnlyHint: boolean;
     untrustedContentHint: boolean;
   };
-  execute: (input: unknown, options: ToolExecutionOptions) => Promise<unknown>;
+  execute: (input: unknown, options?: ToolExecutionOptions) => Promise<unknown>;
 };
 
 const MAX_TOOL_RESULT_CHARS = 1500;
@@ -158,9 +158,9 @@ export function createLoopFixTools(controller: LoopFixController): LoopFixToolDe
       description: "Run LoopFix's bounded deterministic audit for one public HTTP or HTTPS page and make it the active visible audit.",
       inputSchema: LOOPFIX_TOOL_SCHEMAS.run_audit,
       annotations: { readOnlyHint: false, untrustedContentHint: true },
-      execute: (input, { signal }) => safeExecute(async () => {
+      execute: (input, options) => safeExecute(async () => {
         const { url } = assertRunAuditInput(input);
-        return auditSummary(await controller.runAudit(url, signal));
+        return auditSummary(await controller.runAudit(url, options?.signal));
       }),
     },
     {
@@ -214,9 +214,9 @@ export function createLoopFixTools(controller: LoopFixController): LoopFixToolDe
       description: "Re-audit the active canonical URL and compare the selected finding IDs. No replacement URL is accepted.",
       inputSchema: LOOPFIX_TOOL_SCHEMAS.verify_fix_scope,
       annotations: { readOnlyHint: false, untrustedContentHint: true },
-      execute: (input, { signal }) => safeExecute(async () => {
+      execute: (input, options) => safeExecute(async () => {
         assertEmptyInput(input);
-        const results = await controller.verifyFixScope(signal);
+        const results = await controller.verifyFixScope(options?.signal);
         const totals = { fixed: 0, stillPresent: 0, notVerifiable: 0 };
         for (const result of results) {
           if (result.status === "fixed") totals.fixed += 1;
