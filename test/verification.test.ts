@@ -27,6 +27,14 @@ function run(ids: string[]): AuditRun {
 }
 
 describe("compareSelectedFindings", () => {
+  it("does not claim fixes when the audit rules version changed", () => {
+    const before = run(["finding:missing_title"]);
+    const after = { ...run([]), rulesVersion: "2026-08-29.1" };
+    expect(compareSelectedFindings(["finding:missing_title"], before, after)).toEqual([
+      { findingId: "finding:missing_title", status: "not_verifiable" },
+    ]);
+  });
+
   it("marks an absent selected finding as fixed", () => {
     const before = run(["finding:missing_title"]);
     const after = run([]);
