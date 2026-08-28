@@ -30,18 +30,63 @@ jobs:
           rm -rf .bootstrap
           rm -f .github/workflows/bootstrap-loopfix.yml
 
-      - name: Align current Astro and TypeScript configuration
+      - name: Align current WebMCP and Worker contracts
         shell: bash
         run: |
           set -euo pipefail
-          npm pkg set devDependencies.typescript=6.0.3
           node <<'NODE'
           const fs = require('node:fs');
-          const path = 'wrangler.jsonc';
-          const config = JSON.parse(fs.readFileSync(path, 'utf8'));
-          config.main = '@astrojs/cloudflare/entrypoints/server';
-          config.compatibility_flags = [...new Set([...(config.compatibility_flags || []), 'global_fetch_strictly_public'])];
-          fs.writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`);
+
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          pkg.scripts['generate:types'] = 'wrangler types';
+          pkg.scripts.check = 'wrangler types --check && astro check';
+          pkg.devDependencies.typescript = '6.0.3';
+          pkg.devDependencies['@types/node'] = '22.20.1';
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+
+          const tsconfig = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8'));
+          tsconfig.compilerOptions.types = ['./worker-configuration.d.ts', 'webmcp-types', 'node'];
+          fs.writeFileSync('tsconfig.json', JSON.stringify(tsconfig, null, 2) + '\n');
+
+          const wrangler = JSON.parse(fs.readFileSync('wrangler.jsonc', 'utf8'));
+          wrangler.main = '@astrojs/cloudflare/entrypoints/server';
+          wrangler.compatibility_flags = [...new Set([...(wrangler.compatibility_flags || []), 'global_fetch_strictly_public'])];
+          fs.writeFileSync('wrangler.jsonc', JSON.stringify(wrangler, null, 2) + '\n');
+
+          const replaceExact = (path, before, after) => {
+            const source = fs.readFileSync(path, 'utf8');
+            if (!source.includes(before)) throw new Error(`Expected source fragment missing in ${path}`);
+            fs.writeFileSync(path, source.replace(before, after));
+          };
+
+          replaceExact(
+            'src/lib/webmcp/register.ts',
+            'tool as ModelContextTool',
+            'tool as WebMCP.ModelContextTool',
+          );
+
+          replaceExact(
+            'src/scripts/loopfix-client.ts',
+            'function setText(element: Element, value: string) {\n  element.textContent = value;\n}\n\n',
+            '',
+          );
+
+          replaceExact(
+            'test/controller.test.ts',
+            '      assert.ok(error instanceof Error);\n      assert.equal(error.message, "That target is not public.");',
+            '      if (!(error instanceof Error)) return false;\n      assert.equal(error.message, "That target is not public.");',
+          );
+
+          replaceExact(
+            'test/webmcp-tools.test.ts',
+            'import type { VerificationResult } from "../src/lib/app/verification.ts";\n',
+            '',
+          );
+          replaceExact(
+            'test/webmcp-tools.test.ts',
+            '      assert.ok(error instanceof Error);\n      assert.ok(error.message.length <= 220);',
+            '      if (!(error instanceof Error)) return false;\n      assert.ok(error.message.length <= 220);',
+          );
           NODE
 
       - name: Generate dependency lockfile
@@ -49,6 +94,9 @@ jobs:
 
       - name: Install locked dependencies
         run: npm ci
+
+      - name: Generate Worker runtime and binding types
+        run: npm run generate:types
 
       - name: Verify typecheck, tests, and Worker build
         run: npm run verify
