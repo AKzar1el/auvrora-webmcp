@@ -22,6 +22,35 @@ function jsonRequest(body: string, headers: HeadersInit = {}): Request {
 }
 
 describe("handleAuditRequest", () => {
+  it("propagates request cancellation to the outbound page fetch", async () => {
+    const requestAbort = new AbortController();
+    let releaseFetch: (() => void) | undefined;
+    const release = new Promise<void>((resolve) => { releaseFetch = resolve; });
+    let resolveSignal: ((signal: AbortSignal) => void) | undefined;
+    const signalSeen = new Promise<AbortSignal>((resolve) => { resolveSignal = resolve; });
+
+    const responsePromise = handleAuditRequest(new Request("https://loopfix.example/api/audit", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ url: "https://example.org/" }),
+      signal: requestAbort.signal,
+    }), {
+      fetchImpl: async (_input, init) => {
+        assert.ok(init?.signal);
+        resolveSignal?.(init.signal);
+        await release;
+        return new Response(CLEAN_HTML, { headers: { "content-type": "text/html" } });
+      },
+    });
+
+    const outboundSignal = await signalSeen;
+    assert.equal(outboundSignal.aborted, false);
+    requestAbort.abort();
+    assert.equal(outboundSignal.aborted, true);
+    releaseFetch?.();
+    await responsePromise;
+  });
+
   it("rejects non-POST methods", async () => {
     const response = await handleAuditRequest(new Request("https://loopfix.example/api/audit"), runtime());
     expect(response.status).toBe(405);
