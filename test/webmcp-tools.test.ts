@@ -70,6 +70,10 @@ function fakeController() {
   return { controller, calls };
 }
 
+function executeWithoutOptions(tool: { execute: (...args: unknown[]) => Promise<unknown> }, input: unknown) {
+  return tool.execute(input);
+}
+
 describe("WebMCP schema contract", () => {
   it("defines exactly five stable object schemas without additional properties", () => {
     expect(Object.keys(LOOPFIX_TOOL_SCHEMAS).sort()).toEqual([
@@ -113,6 +117,24 @@ describe("WebMCP handlers", () => {
     await verify.execute({}, { signal: abort.signal });
     expect(calls.find((call) => call.name === "runAudit")?.signal).toBe(abort.signal);
     expect(calls.find((call) => call.name === "verifyFixScope")?.signal).toBe(abort.signal);
+  });
+
+  it("runs run_audit when Chrome omits callback execution options", async () => {
+    const { controller, calls } = fakeController();
+    const run = createLoopFixTools(controller).find((tool) => tool.name === "run_audit")!;
+    await executeWithoutOptions(run, { url: "https://example.org/" });
+    const call = calls.find((item) => item.name === "runAudit");
+    expect(call?.value).toBe("https://example.org/");
+    expect(call?.signal).toBeUndefined();
+  });
+
+  it("runs verify_fix_scope when Chrome omits callback execution options", async () => {
+    const { controller, calls } = fakeController();
+    const tools = createLoopFixTools(controller);
+    const verify = tools.find((tool) => tool.name === "verify_fix_scope")!;
+    controller.setFixScope(["finding:rule_0"]);
+    await executeWithoutOptions(verify, {});
+    expect(calls.find((item) => item.name === "verifyFixScope")?.signal).toBeUndefined();
   });
 
   it("strictly rejects unknown keys and invalid input types before controller calls", async () => {
