@@ -30,7 +30,7 @@ jobs:
           rm -rf .bootstrap
           rm -f .github/workflows/bootstrap-loopfix.yml
 
-      - name: Align current WebMCP and Worker contracts
+      - name: Align current WebMCP, Worker, and browser contracts
         shell: bash
         run: |
           set -euo pipefail
@@ -53,6 +53,8 @@ jobs:
           wrangler.compatibility_flags = [...new Set([...(wrangler.compatibility_flags || []), 'global_fetch_strictly_public'])];
           fs.writeFileSync('wrangler.jsonc', JSON.stringify(wrangler, null, 2) + '\n');
 
+          fs.writeFileSync('astro.config.mjs', `import { defineConfig } from "astro/config";\nimport cloudflare from "@astrojs/cloudflare";\n\nexport default defineConfig({\n  output: "server",\n  session: false,\n  adapter: cloudflare({\n    imageService: "passthrough",\n  }),\n});\n`);
+
           const replaceExact = (path, before, after) => {
             const source = fs.readFileSync(path, 'utf8');
             if (!source.includes(before)) throw new Error(`Expected source fragment missing in ${path}`);
@@ -67,8 +69,40 @@ jobs:
 
           replaceExact(
             'src/scripts/loopfix-client.ts',
+            'import { registerLoopFixTools } from "../lib/webmcp/register.ts";\n\n',
+            'import { registerLoopFixTools } from "../lib/webmcp/register.ts";\n\nfunction appendElements(parent: Node, ...children: Node[]) {\n  for (const child of children) parent.appendChild(child);\n}\n\n',
+          );
+          replaceExact(
+            'src/scripts/loopfix-client.ts',
             'function setText(element: Element, value: string) {\n  element.textContent = value;\n}\n\n',
             '',
+          );
+
+          const clientPath = 'src/scripts/loopfix-client.ts';
+          let client = fs.readFileSync(clientPath, 'utf8');
+          const replacements = [
+            ['top.append(severity, code);', 'appendElements(top, severity, code);'],
+            ['body.append(top, title, evidence);', 'appendElements(body, top, title, evidence);'],
+            ['label.append(checkbox, body);', 'appendElements(label, checkbox, body);'],
+            ['counts.append(badge);', 'counts.appendChild(badge);'],
+            ['findingsList.append(findingRow(', 'findingsList.appendChild(findingRow('],
+            ['findingsList.append(empty);', 'findingsList.appendChild(empty);'],
+            ['text.append(title, code);', 'appendElements(text, title, code);'],
+            ['item.append(text, remove);', 'appendElements(item, text, remove);'],
+            ['scopeList.append(item);', 'scopeList.appendChild(item);'],
+            ['row.append(title, status);', 'appendElements(row, title, status);'],
+            ['verificationList.append(row);', 'verificationList.appendChild(row);'],
+          ];
+          for (const [before, after] of replacements) {
+            if (!client.includes(before)) throw new Error(`Expected client fragment missing: ${before}`);
+            client = client.split(before).join(after);
+          }
+          fs.writeFileSync(clientPath, client);
+
+          replaceExact(
+            'test/fetch-public-page.test.ts',
+            '    }) as typeof setTimeout;',
+            '    }) as unknown as typeof setTimeout;',
           );
 
           replaceExact(
