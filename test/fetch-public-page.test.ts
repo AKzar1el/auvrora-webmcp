@@ -142,6 +142,46 @@ describe("fetchPublicPage", () => {
     }
   });
 
+  it("keeps the internal deadline active while reading the response body", async () => {
+    const originalSetTimeout = globalThis.setTimeout;
+    const originalClearTimeout = globalThis.clearTimeout;
+    let timeoutCallback: (() => void) | undefined;
+    let timeoutCleared = false;
+    let bodyController: ReadableStreamDefaultController<Uint8Array> | undefined;
+
+    globalThis.setTimeout = ((callback: TimerHandler) => {
+      timeoutCallback = callback as () => void;
+      return 1 as unknown as ReturnType<typeof setTimeout>;
+    }) as typeof setTimeout;
+    globalThis.clearTimeout = (() => { timeoutCleared = true; }) as typeof clearTimeout;
+
+    try {
+      const fetchImpl = async (_input: RequestInfo | URL, init?: RequestInit) => {
+        const stream = new ReadableStream<Uint8Array>({
+          start(controller) {
+            bodyController = controller;
+            controller.enqueue(new TextEncoder().encode("<html>"));
+            init?.signal?.addEventListener("abort", () => controller.error(init.signal?.reason), { once: true });
+          },
+        });
+        return new Response(stream, { status: 200, headers: { "content-type": "text/html" } });
+      };
+
+      const result = fetchPublicPage("https://example.org/", { fetchImpl: fetchImpl as typeof fetch })
+        .then(() => ({ code: "resolved" }), (error: { code?: string }) => ({ code: error.code ?? "unknown" }));
+
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(timeoutCleared).toBe(false);
+      timeoutCallback?.();
+      expect((await result).code).toBe("request_timeout");
+    } finally {
+      try { bodyController?.close(); } catch {}
+      globalThis.setTimeout = originalSetTimeout;
+      globalThis.clearTimeout = originalClearTimeout;
+    }
+  });
+
   it("maps the internal deadline to request_timeout", async () => {
     const originalSetTimeout = globalThis.setTimeout;
     const originalClearTimeout = globalThis.clearTimeout;
