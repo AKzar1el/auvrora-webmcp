@@ -29,7 +29,6 @@ jobs:
           cat .bootstrap/payload.part* | base64 --decode > /tmp/loopfix-bootstrap.tar.gz
           tar -xzf /tmp/loopfix-bootstrap.tar.gz -C .
           rm -rf .bootstrap
-          rm -f .github/workflows/ci.yml
 
       - name: Align current WebMCP, Worker, and browser contracts
         shell: bash
@@ -136,10 +135,11 @@ jobs:
       - name: Verify typecheck, tests, and Worker build
         run: npm run verify
 
-      - name: Commit verified source
+      - name: Commit verified source without modifying Actions workflows
         shell: bash
         run: |
           set -euo pipefail
+          rm -f .github/workflows/ci.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
