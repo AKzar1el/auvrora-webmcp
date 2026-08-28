@@ -152,7 +152,7 @@ describe("fetchPublicPage", () => {
     globalThis.setTimeout = ((callback: TimerHandler) => {
       timeoutCallback = callback as () => void;
       return 1 as unknown as ReturnType<typeof setTimeout>;
-    }) as typeof setTimeout;
+    }) as unknown as typeof setTimeout;
     globalThis.clearTimeout = (() => { timeoutCleared = true; }) as typeof clearTimeout;
 
     try {
