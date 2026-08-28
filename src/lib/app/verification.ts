@@ -12,6 +12,10 @@ export function compareSelectedFindings(
   before: AuditRun,
   after: AuditRun,
 ): VerificationResult[] {
+  if (before.rulesVersion !== after.rulesVersion) {
+    return selectedIds.map((findingId) => ({ findingId, status: "not_verifiable" as const }));
+  }
+
   const beforeIds = new Set(before.findings.map((finding) => finding.id));
   const afterIds = new Set(after.findings.map((finding) => finding.id));
 
