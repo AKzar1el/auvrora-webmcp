@@ -153,6 +153,17 @@ describe("WebMCP handlers", () => {
     assert.ok(!JSON.stringify(inspected).includes("<script"));
   });
 
+  it("reports filtered availability independently from the requested list limit", async () => {
+    const { controller } = fakeController();
+    const list = createLoopFixTools(controller).find((tool) => tool.name === "list_findings")!;
+    const result = await list.execute({ limit: 2 }, { signal: new AbortController().signal }) as {
+      returned: number;
+      available: number;
+      truncated: boolean;
+    };
+    assert.deepEqual(result, { ...result, returned: 2, available: 12, truncated: true });
+  });
+
   it("preserves AbortError cancellation instead of converting it into a generic tool failure", async () => {
     const { controller } = fakeController();
     controller.runAudit = async () => { throw new DOMException("Cancelled", "AbortError"); };
