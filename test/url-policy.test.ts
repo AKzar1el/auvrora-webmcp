@@ -29,12 +29,12 @@ describe("parsePublicTarget", () => {
   });
 
   it("rejects non-HTTP protocols and embedded credentials", () => {
-    expect(() => parsePublicTarget("file:///etc/passwd")).toThrowError(/HTTP or HTTPS/);
-    expect(() => parsePublicTarget("https://user:pass@example.org/")).toThrowError(/credentials/);
+    expect(() => parsePublicTarget("file:///etc/passwd")).toThrow(/HTTP or HTTPS/);
+    expect(() => parsePublicTarget("https://user:pass@example.org/")).toThrow(/credentials/);
   });
 
   it("rejects non-standard ports", () => {
-    expect(() => parsePublicTarget("https://example.org:8443/")).toThrowError(/standard ports/);
+    expect(() => parsePublicTarget("https://example.org:8443/")).toThrow(/standard ports/);
     expectCode("https://example.org:8443/", "unsupported_port");
   });
 
@@ -55,7 +55,7 @@ describe("parsePublicTarget", () => {
       "http://203.0.113.1/",
       "http://224.0.0.1/",
     ]) {
-      expect(() => parsePublicTarget(url)).toThrowError(/public/);
+      expect(() => parsePublicTarget(url)).toThrow(/public/);
       expectCode(url, "private_url");
     }
   });
@@ -70,7 +70,7 @@ describe("parsePublicTarget", () => {
       "http://[ff02::1]/",
       "http://[::ffff:127.0.0.1]/",
     ]) {
-      expect(() => parsePublicTarget(url)).toThrowError(/public/);
+      expect(() => parsePublicTarget(url)).toThrow(/public/);
       expectCode(url, "private_url");
     }
   });
@@ -87,7 +87,7 @@ describe("parsePublicTarget", () => {
       "http://foo.example/",
       "http://foo.onion/",
     ]) {
-      expect(() => parsePublicTarget(url)).toThrowError(/public/);
+      expect(() => parsePublicTarget(url)).toThrow(/public/);
       expectCode(url, "private_url");
     }
   });
