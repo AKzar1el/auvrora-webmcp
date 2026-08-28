@@ -70,8 +70,9 @@ function fakeController() {
   return { controller, calls };
 }
 
-function executeWithoutOptions(tool: { execute: (...args: unknown[]) => Promise<unknown> }, input: unknown) {
-  return tool.execute(input);
+function executeWithoutOptions(tool: { execute: unknown }, input: unknown) {
+  const execute = tool.execute as (input: unknown) => Promise<unknown>;
+  return execute(input);
 }
 
 describe("WebMCP schema contract", () => {
