@@ -14,7 +14,7 @@
     "test:watch": "vitest",
     "build": "astro build",
     "verify": "npm run check && npm test && npm run build",
-    "deploy": "wrangler deploy",
+    "deploy": "npm run verify && wrangler deploy",
     "generate:types": "wrangler types"
   },
   "dependencies": {
