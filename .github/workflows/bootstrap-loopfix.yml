@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   bootstrap:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -28,7 +29,7 @@ jobs:
           cat .bootstrap/payload.part* | base64 --decode > /tmp/loopfix-bootstrap.tar.gz
           tar -xzf /tmp/loopfix-bootstrap.tar.gz -C .
           rm -rf .bootstrap
-          rm -f .github/workflows/bootstrap-loopfix.yml
+          rm -f .github/workflows/ci.yml
 
       - name: Align current WebMCP, Worker, and browser contracts
         shell: bash
