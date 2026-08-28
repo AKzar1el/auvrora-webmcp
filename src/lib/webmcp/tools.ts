@@ -124,7 +124,9 @@ function auditSummary(audit: Awaited<ReturnType<LoopFixController["runAudit"]>>)
 }
 
 function boundedFindingList(controller: LoopFixController, input: { severity?: Severity; limit?: number }) {
-  const selected = new Set(controller.getState().selectedFindingIds);
+  const state = controller.getState();
+  const selected = new Set(state.selectedFindingIds);
+  const available = (state.audit?.findings ?? []).filter((finding) => !input.severity || finding.severity === input.severity).length;
   const findings = controller.listFindings(input);
   const result: Array<Record<string, unknown>> = [];
   for (const finding of findings) {
@@ -136,15 +138,15 @@ function boundedFindingList(controller: LoopFixController, input: { severity?: S
       affectedUrl: clip(finding.affectedUrl, 96),
       selected: selected.has(finding.id),
     };
-    const candidate = { findings: [...result, row], returned: result.length + 1, available: findings.length };
+    const candidate = { findings: [...result, row], returned: result.length + 1, available };
     if (JSON.stringify(candidate).length > MAX_TOOL_RESULT_CHARS) break;
     result.push(row);
   }
   return {
     findings: result,
     returned: result.length,
-    available: findings.length,
-    truncated: result.length < findings.length,
+    available,
+    truncated: result.length < available,
   };
 }
 
