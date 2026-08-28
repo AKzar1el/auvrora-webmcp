@@ -4,7 +4,7 @@
 
 Built as a new open-source entry for the **OpenAI WebMCP Challenge (August–September 2026)**.
 
-> **Live demo:** pending production deployment. This line will be replaced with the verified Worker URL before submission.
+> **Live demo:** https://loopfix-webmcp.tomi-seregi99.workers.dev
 
 ## The loop
 
@@ -50,7 +50,14 @@ In Chrome DevTools you can inspect the current page tools with:
 await document.modelContext.getTools()
 ```
 
-The human UI remains fully usable when WebMCP is unavailable.
+Current Chrome expects manual `executeTool()` inputs as a JSON string. For example:
+
+```js
+const tool = (await document.modelContext.getTools()).find(({ name }) => name === "run_audit");
+await document.modelContext.executeTool(tool, JSON.stringify({ url: "https://example.com/" }));
+```
+
+The deployed build was verified against **Google Chrome 151.0.7922.173** with all five native WebMCP tools executed successfully. The human UI remains fully usable when WebMCP is unavailable.
 
 ## Deterministic audit scope
 
@@ -68,7 +75,7 @@ Page-derived results are exposed to WebMCP with `untrustedContentHint: true`; re
 
 Astro + TypeScript run on Cloudflare Workers. The browser owns ephemeral workflow state. Both human controls and WebMCP tool handlers delegate to the same application controller; the server owns only URL policy, bounded retrieval, deterministic analysis, and coarse abuse protection.
 
-See [docs/architecture.md](docs/architecture.md) and [docs/challenge-scope.md](docs/challenge-scope.md).
+See [docs/architecture.md](docs/architecture.md), [docs/challenge-scope.md](docs/challenge-scope.md), and [docs/release-verification.md](docs/release-verification.md).
 
 ## License
 
