@@ -79,4 +79,30 @@ describe("controller async state safety", () => {
     expect(controller.getState().audit?.canonicalUrl).toBe("https://example.org/second");
     expect(controller.getState().verification).toBeNull();
   });
+
+  it("invalidates verification as soon as a replacement audit is requested", async () => {
+    const verificationFetch = deferred<AuditRun>();
+    const replacementFetch = deferred<AuditRun>();
+    let call = 0;
+    const controller = createLoopFixController({
+      auditClient: async () => {
+        call += 1;
+        if (call === 1) return run("https://example.org/first");
+        if (call === 2) return verificationFetch.promise;
+        return replacementFetch.promise;
+      },
+    });
+
+    await controller.runAudit("https://example.org/first");
+    controller.setFixScope(["finding:missing_title"]);
+    const verification = controller.verifyFixScope();
+    const replacement = controller.runAudit("https://example.org/second");
+
+    verificationFetch.resolve(run("https://example.org/first", []));
+    await expect(verification).rejects.toThrow(/changed|newer|stale|supersed/i);
+    expect(controller.getState().verification).toBeNull();
+
+    replacementFetch.resolve(run("https://example.org/second"));
+    await expect(replacement).resolves.toMatchObject({ canonicalUrl: "https://example.org/second" });
+  });
 });
