@@ -33,15 +33,21 @@ export function createLoopFixController(options: ControllerOptions = {}): LoopFi
   const auditClient = options.auditClient ?? createAuditClient();
   const beforeDemo = options.demoBeforeRun ?? demoBefore;
   const afterDemo = options.demoAfterRun ?? demoAfter;
+  let auditRequestVersion = 0;
 
   return {
     async runAudit(url, signal) {
+      const requestVersion = ++auditRequestVersion;
       const audit = await auditClient(url, signal);
+      if (requestVersion !== auditRequestVersion) {
+        throw new Error("A newer audit superseded this request.");
+      }
       store.replaceAudit(audit, "live");
       return audit;
     },
 
     loadDemo() {
+      auditRequestVersion += 1;
       store.replaceAudit(beforeDemo, "demo");
       return beforeDemo;
     },
@@ -78,6 +84,9 @@ export function createLoopFixController(options: ControllerOptions = {}): LoopFi
       const freshAudit = state.mode === "demo"
         ? afterDemo
         : await auditClient(state.audit.canonicalUrl, signal);
+      if (store.getState() !== state) {
+        throw new Error("The active audit or fix scope changed during verification. Run verification again.");
+      }
       const results = compareSelectedFindings([...state.selectedFindingIds], state.audit, freshAudit);
       store.setVerification(freshAudit, results);
       return results;
