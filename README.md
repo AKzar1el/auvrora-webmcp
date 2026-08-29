@@ -63,9 +63,11 @@ The deployed build was verified against **Google Chrome 151.0.7922.173** with al
 
 LoopFix also ships **10 natural-language WebMCP eval cases** covering direct tool selection, ambiguous intent, multi-step journeys, recovery from empty state, and a no-tool refusal. `evals/tools.json` snapshots the public tool contract for schema-only model evals, while CI verifies that snapshot against the production tool definitions so it cannot silently drift.
 
-The suite is compatible with GoogleChromeLabs' experimental `webmcp-evals` tooling for deterministic live smoke tests and optional probabilistic model/browser evals. Model runs are intentionally not part of the default CI gate because they require a chosen backend, can incur cost, and are non-deterministic.
+The nine executable trajectories were additionally run against the public Worker with GoogleChromeLabs' pinned `webmcp-evals` smoke runner and passed **29/29 required live WebMCP tool steps**. The tenth case is an intentional no-tool refusal and remains in the probabilistic model-eval suite rather than being converted into a fake smoke call.
 
-See [docs/webmcp-evals.md](docs/webmcp-evals.md) for the dataset, pinned-tooling smoke command, and model-eval procedure.
+Model runs are intentionally not part of the default CI gate because they require a chosen backend, can incur cost, and are non-deterministic.
+
+See [docs/webmcp-evals.md](docs/webmcp-evals.md) for the dataset, pinned-tooling smoke procedure, and model-eval workflow.
 
 ## Deterministic audit scope
 
