@@ -4,6 +4,8 @@ import FindingsPanel from "../components/FindingsPanel.astro";
 import FixScopePanel from "../components/FixScopePanel.astro";
 import VerificationPanel from "../components/VerificationPanel.astro";
 import "../styles/global.css";
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.url.origin);
 ---
 <!doctype html>
 <html lang="en">
@@ -11,8 +13,9 @@ import "../styles/global.css";
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#111214" />
-    <title>LoopFix WebMCP</title>
+    <title>LoopFix WebMCP — Human-Agent SEO Audit Loop</title>
     <meta name="description" content="A human-agent WebMCP workflow for deterministic technical SEO auditing and fix verification." />
+    <link rel="canonical" href={canonicalUrl} />
   </head>
   <body>
     <header class="site-header">
