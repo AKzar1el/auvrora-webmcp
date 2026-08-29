@@ -37,11 +37,16 @@ jobs:
           npm ci
           npm run build
 
+      - name: Prepare deterministic smoke cases
+        run: |
+          jq '[.[] | select(.expectedCall != null)]' evals/webmcp-evals.json > "$RUNNER_TEMP/loopfix-smoke.json"
+          test "$(jq 'length' "$RUNNER_TEMP/loopfix-smoke.json")" -eq 9
+
       - name: Execute LoopFix eval trajectories against production
         run: |
           node .tmp/webmcp-tools/webmcp-evals/dist/bin/webmcp-evals.js \
             --chrome-channel chrome \
             smoke \
             -u https://loopfix-webmcp.tomi-seregi99.workers.dev \
-            -e "$GITHUB_WORKSPACE/evals/webmcp-evals.json" \
+            -e "$RUNNER_TEMP/loopfix-smoke.json" \
             -v
