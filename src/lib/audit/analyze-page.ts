@@ -19,7 +19,12 @@ function decodeMinimalEntities(value: string): string {
     .replace(/&lt;/gi, "<")
     .replace(/&gt;/gi, ">")
     .replace(/&quot;/gi, '"')
-    .replace(/&#(?:39|x27);/gi, "'")
+    .replace(/&#x([0-9a-f]+);/gi, (_match, digits: string) => {
+      const codePoint = Number.parseInt(digits, 16);
+      return Number.isInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10ffff
+        ? String.fromCodePoint(codePoint)
+        : "";
+    })
     .replace(/&#(\d+);/g, (_match, digits: string) => {
       const codePoint = Number(digits);
       return Number.isInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10ffff
