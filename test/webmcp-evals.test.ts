@@ -22,6 +22,7 @@ type ToolName = (typeof TOOL_NAMES)[number];
 type EvalCall = {
   functionName?: string;
   arguments?: unknown;
+  mockOutput?: unknown;
   optional?: boolean;
   ordered?: EvalCall[];
   unordered?: EvalCall[];
@@ -121,6 +122,31 @@ describe("WebMCP eval artifacts", () => {
       expect(Array.isArray(entry.expectedCall)).toBe(true);
       for (const call of flattenCalls(entry.expectedCall ?? [])) {
         expect(allowed.has(call.functionName ?? ""), `unknown eval tool ${call.functionName}`).toBe(true);
+      }
+    }
+  });
+
+  it("keeps list_findings mock outputs internally coherent", () => {
+    const evals = readJson(EVALS_PATH) as EvalCase[];
+
+    for (const entry of evals) {
+      if (!entry.expectedCall) continue;
+      for (const call of flattenCalls(entry.expectedCall)) {
+        if (call.functionName !== "list_findings" || !call.mockOutput || typeof call.mockOutput !== "object") continue;
+        const output = call.mockOutput as {
+          findings?: unknown[];
+          returned?: number;
+          available?: number;
+          truncated?: boolean;
+        };
+        if (!Array.isArray(output.findings) || output.returned === undefined) continue;
+        expect(output.returned, `${entry.name}: returned must match findings length`).toBe(output.findings.length);
+        if (output.available !== undefined) {
+          expect(output.available, `${entry.name}: available must be >= returned`).toBeGreaterThanOrEqual(output.returned);
+        }
+        if (output.available !== undefined && output.truncated !== undefined) {
+          expect(output.truncated, `${entry.name}: truncated must describe returned vs available`).toBe(output.returned < output.available);
+        }
       }
     }
   });
