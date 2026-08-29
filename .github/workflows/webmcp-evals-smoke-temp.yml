@@ -1,0 +1,47 @@
+name: Temporary WebMCP eval smoke
+
+on:
+  push:
+    branches:
+      - feat/webmcp-evals
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout LoopFix
+        uses: actions/checkout@v6
+
+      - name: Checkout GoogleChromeLabs WebMCP tools
+        uses: actions/checkout@v6
+        with:
+          repository: GoogleChromeLabs/webmcp-tools
+          ref: 97e6fbe83fc3f2e3c6df2198b962dd2ad59cb924
+          path: .tmp/webmcp-tools
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: .tmp/webmcp-tools/webmcp-evals/package-lock.json
+
+      - name: Build pinned WebMCP eval CLI
+        working-directory: .tmp/webmcp-tools/webmcp-evals
+        run: |
+          npm ci
+          npm run build
+
+      - name: Execute LoopFix eval trajectories against production
+        run: |
+          node .tmp/webmcp-tools/webmcp-evals/dist/bin/webmcp-evals.js \
+            --chrome-channel chrome \
+            smoke \
+            -u https://loopfix-webmcp.tomi-seregi99.workers.dev \
+            -e "$GITHUB_WORKSPACE/evals/webmcp-evals.json" \
+            -v
