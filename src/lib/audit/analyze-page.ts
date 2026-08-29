@@ -50,9 +50,49 @@ function parseAttributes(tag: string): Map<string, string | null> {
   return attributes;
 }
 
+function isTagBoundary(character: string | undefined): boolean {
+  return character === undefined || /[\t\n\f\r />]/.test(character);
+}
+
 function startTags(html: string, tag: string): string[] {
-  const pattern = new RegExp(`<${tag}\\b[^>]*>`, "gi");
-  return html.match(pattern) ?? [];
+  const tags: string[] = [];
+  const lowerHtml = html.toLowerCase();
+  const needle = `<${tag.toLowerCase()}`;
+  let cursor = 0;
+
+  while (cursor < html.length) {
+    const start = lowerHtml.indexOf(needle, cursor);
+    if (start === -1) break;
+
+    const afterName = html[start + needle.length];
+    if (!isTagBoundary(afterName)) {
+      cursor = start + needle.length;
+      continue;
+    }
+
+    let quote: '"' | "'" | null = null;
+    let end = start + needle.length;
+    for (; end < html.length; end += 1) {
+      const character = html[end];
+      if (quote) {
+        if (character === quote) quote = null;
+        continue;
+      }
+      if (character === '"' || character === "'") {
+        quote = character;
+        continue;
+      }
+      if (character === ">") {
+        tags.push(html.slice(start, end + 1));
+        cursor = end + 1;
+        break;
+      }
+    }
+
+    if (end >= html.length) break;
+  }
+
+  return tags;
 }
 
 function extractTitle(html: string): string {
