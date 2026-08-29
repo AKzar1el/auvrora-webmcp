@@ -9,11 +9,11 @@ Verified on **August 29, 2026** for the OpenAI WebMCP Challenge.
 - Deployed Worker version: `3650c7b0-43bc-4c34-aa06-43e9c7989bb0`
 - Runtime source commit: `14d61877d05aee83fb9d0b11ffb6a8e7f98af156`
 
-Documentation-only commits after that source commit do not change the deployed runtime artifact.
+Subsequent repository commits add tests, WebMCP evaluation fixtures, and documentation only; they do not change the deployed runtime code.
 
-## Clean build gate
+## Clean build gate for the deployed runtime
 
-The final hardened source was verified repeatedly before and after integration, and again by the production deployment runner:
+The final hardened runtime source was verified repeatedly before and after integration, and again by the production deployment runner:
 
 - `npm ci`: success; npm reported **0 vulnerabilities**.
 - `wrangler types --check`: generated Worker types current.
@@ -87,6 +87,49 @@ Each tool was executed against the production page through native `document.mode
 Current Chrome manual `executeTool()` inputs are provided as a JSON string. During production browser verification, Chrome 151 also did not provide the tool callback's execution-options argument on this manual execution path, although current WebMCP guidance documents an execution `AbortSignal`.
 
 LoopFix therefore treats callback options as optional while continuing to propagate `AbortSignal` whenever an agent/browser supplies one. Regression tests cover both the absent-options behavior and the documented signal-forwarding path.
+
+## Post-deployment WebMCP eval verification
+
+An eval-only hardening pass added a reproducible agent-facing dataset without changing the five production tools, server behavior, Cloudflare configuration, or deployed runtime bundle.
+
+The repository now contains **10 natural-language WebMCP eval cases** covering:
+
+- direct audit/tool-selection requests;
+- ambiguous severity and scope requests;
+- multi-step audit → inspect → scope → verify journeys;
+- inspect-before-mutate ordering;
+- recovery from an empty browser state; and
+- one no-tool refusal for an unsupported website-edit/deploy request.
+
+A static `evals/tools.json` snapshot contains the five public tool names, descriptions, and input schemas. Repository tests compare that snapshot with the production WebMCP definitions so schema or description drift cannot silently invalidate the eval corpus. Additional guards validate eval structure and mocked `list_findings` output coherence.
+
+After the final eval fixture corrections, normal repository CI reported:
+
+- `npm ci`: success; LoopFix's dependency tree reported **0 vulnerabilities**;
+- `wrangler types --check`: generated Worker types current;
+- `astro check`: **45 files, 0 errors, 0 warnings, 0 hints**;
+- Vitest: **18 files / 104 tests passed**;
+- `astro build` with `@astrojs/cloudflare`: success.
+
+### Live expected-call trajectory smoke
+
+GoogleChromeLabs' experimental `webmcp-evals` CLI was executed from pinned upstream commit `97e6fbe83fc3f2e3c6df2198b962dd2ad59cb924` in a disposable GitHub Actions environment. It was not added to LoopFix's application dependency graph.
+
+The nine eval cases that contain required tool calls were executed against the public production Worker through the upstream Chrome smoke runner. Because LoopFix intentionally rate-limits audit starts to 10 per minute per derived key, the cases were split across two limiter windows rather than weakening production abuse controls.
+
+Final result:
+
+- batch A: **12/12 required steps passed** across five cases;
+- batch B: **17/17 required steps passed** across four cases;
+- combined: **29/29 required live WebMCP tool steps passed**.
+
+The live trajectory run exercised all five LoopFix tools, including one-finding verification, two-finding verification, ambiguous selection, and recovery from empty state.
+
+The tenth eval uses `expectedCall: null` to assert that an agent should not invent a website-edit/deploy capability. The deterministic upstream smoke command cannot evaluate the intentional absence of a call, so that case remains part of the optional probabilistic model-eval dataset rather than being converted into an artificial tool invocation.
+
+LoopFix does **not** publish a probabilistic model tool-selection pass rate because no fixed model/backend/run-count benchmark has been executed and recorded. The repository publishes the reproducible eval inputs and deterministic live trajectory evidence instead of fabricating a model result.
+
+See [webmcp-evals.md](webmcp-evals.md) for the exact dataset, pinned smoke procedure, and optional model-eval commands.
 
 ## Security scope confirmed
 
