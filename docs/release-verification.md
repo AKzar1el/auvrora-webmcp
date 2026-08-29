@@ -1,48 +1,70 @@
 # Release verification
 
-Verified on **August 28, 2026** for the OpenAI WebMCP Challenge.
+Verified on **August 29, 2026** for the OpenAI WebMCP Challenge.
 
 ## Production artifact
 
 - Live URL: <https://loopfix-webmcp.tomi-seregi99.workers.dev>
 - Cloudflare Worker: `loopfix-webmcp`
-- Deployed Worker version: `3c7dbaf0-3d85-483b-8e01-9bba463e9fb1`
-- Runtime code verification commit: `2916e943a2c43cf64cdfd32dbb1a2f946170669f`
+- Deployed Worker version: `3650c7b0-43bc-4c34-aa06-43e9c7989bb0`
+- Runtime source commit: `14d61877d05aee83fb9d0b11ffb6a8e7f98af156`
 
-Documentation-only commits after that code verification do not change the deployed runtime artifact.
+Documentation-only commits after that source commit do not change the deployed runtime artifact.
 
 ## Clean build gate
 
-The production deployment runner executed the repository's complete verification gate before publishing:
+The final hardened source was verified repeatedly before and after integration, and again by the production deployment runner:
 
 - `npm ci`: success; npm reported **0 vulnerabilities**.
 - `wrangler types --check`: generated Worker types current.
 - `astro check`: **0 errors, 0 warnings, 0 hints**.
-- Vitest: **12 files / 89 tests passed**.
+- Vitest: **17 files / 99 tests passed**.
 - `astro build` with `@astrojs/cloudflare`: success.
 - Wrangler 4.127.1 deployment: success.
 
-The Worker reported the expected bindings:
+The production Worker reported the expected bindings:
 
 - `AUDIT_RATE_LIMITER`: 10 requests / 60 seconds.
 - `ASSETS`: static assets binding.
 
-## Production HTTP and security smoke
+## Final hardening regression coverage
+
+The pre-submission sweep added focused regression tests for issues reproduced against the prior build:
+
+- stale overlapping audit requests cannot replace newer audit state;
+- verification cannot attach to a changed or newly superseded audit/fix scope;
+- hexadecimal numeric HTML character references are normalized before heuristic text-length checks;
+- quoted `>` characters no longer truncate valid HTML start tags;
+- multiple robots meta tags are combined and the standard `none` directive is treated as noindex-equivalent;
+- LoopFix's own title and canonical metadata stay consistent with its deterministic audit rules.
+
+No new framework, runtime dependency, authentication system, database, AI backend, crawler scope, or WebMCP tool was introduced by the hardening sweep.
+
+## Production HTTP, security, and stress verification
 
 The freshly deployed production URL passed the following checks:
 
 - `/`: HTTP 200 on the first readiness attempt.
-- Page title contains `LoopFix WebMCP`.
+- Final page title and production canonical URL present.
 - `Content-Security-Policy` header present.
 - `Permissions-Policy` header present.
-- `POST /api/audit` with `https://example.com/`: HTTP 200 with the expected canonical URL and a findings array.
-- `POST /api/audit` with `http://127.0.0.1/`: HTTP 400 with `error: private_url`.
+- `X-Content-Type-Options: nosniff` present.
+- `Referrer-Policy: no-referrer` present.
+- `X-Frame-Options: DENY` present.
+- LoopFix audited its own production URL with **zero deterministic findings**.
+- Malformed JSON was rejected.
+- A non-JSON form-style POST was rejected by Astro's CSRF protection with HTTP 403.
+- An oversized request body was rejected.
+- Requests containing undeclared JSON properties were rejected.
+- Literal loopback/link-local targets including `127.0.0.1`, `169.254.169.254`, and `[::1]` were rejected with `private_url`.
+- 25 parallel requests to `/` completed **25/25 with HTTP 200**.
+- 20 parallel production audit requests completed **20/20 with HTTP 200** and no 5xx responses.
 
-These checks verify the public runtime, not only a local build.
+These checks exercise the public runtime rather than only a local or CI build.
 
 ## Native WebMCP browser verification
 
-The deployed production URL was tested with **Google Chrome 151.0.7922.173** with WebMCP testing enabled.
+The hardened production URL was tested with **Google Chrome 151.0.7922.173** with WebMCP testing enabled.
 
 Chrome discovered exactly these five page tools through `document.modelContext`:
 
@@ -52,7 +74,7 @@ Chrome discovered exactly these five page tools through `document.modelContext`:
 4. `set_fix_scope`
 5. `verify_fix_scope`
 
-Each tool was then executed against the production page through native `document.modelContext.executeTool()` and passed:
+Each tool was executed against the production page through native `document.modelContext.executeTool()` and passed:
 
 - `run_audit`: passed against `https://example.com/`.
 - `list_findings`: returned deterministic findings from the active audit.
@@ -62,9 +84,9 @@ Each tool was then executed against the production page through native `document
 
 ### Chrome compatibility note
 
-Chrome's current manual `executeTool()` API accepts tool arguments as a JSON string. During production browser verification, Chrome 151 also did not provide the tool callback's execution-options argument on this manual execution path, although current WebMCP guidance documents an execution `AbortSignal`.
+Current Chrome manual `executeTool()` inputs are provided as a JSON string. During production browser verification, Chrome 151 also did not provide the tool callback's execution-options argument on this manual execution path, although current WebMCP guidance documents an execution `AbortSignal`.
 
-LoopFix therefore treats callback options as optional while continuing to propagate `AbortSignal` whenever an agent/browser supplies one. Two regression tests cover the absent-options behavior, and the existing signal-forwarding tests cover the documented path.
+LoopFix therefore treats callback options as optional while continuing to propagate `AbortSignal` whenever an agent/browser supplies one. Regression tests cover both the absent-options behavior and the documented signal-forwarding path.
 
 ## Security scope confirmed
 
@@ -78,5 +100,7 @@ The production build does not:
 - use an LLM backend;
 - persist accounts or audit data;
 - expose its WebMCP tools cross-origin.
+
+The analyzer is intentionally a small deterministic audit scanner rather than a full browser-conformance parser. It does not currently inspect `X-Robots-Tag` response headers or perform multi-page crawling.
 
 See [security.md](security.md) for the complete threat boundary and known limitations.
