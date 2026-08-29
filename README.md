@@ -59,6 +59,14 @@ await document.modelContext.executeTool(tool, JSON.stringify({ url: "https://exa
 
 The deployed build was verified against **Google Chrome 151.0.7922.173** with all five native WebMCP tools executed successfully. The human UI remains fully usable when WebMCP is unavailable.
 
+## Agent evals
+
+LoopFix also ships **10 natural-language WebMCP eval cases** covering direct tool selection, ambiguous intent, multi-step journeys, recovery from empty state, and a no-tool refusal. `evals/tools.json` snapshots the public tool contract for schema-only model evals, while CI verifies that snapshot against the production tool definitions so it cannot silently drift.
+
+The suite is compatible with GoogleChromeLabs' experimental `webmcp-evals` tooling for deterministic live smoke tests and optional probabilistic model/browser evals. Model runs are intentionally not part of the default CI gate because they require a chosen backend, can incur cost, and are non-deterministic.
+
+See [docs/webmcp-evals.md](docs/webmcp-evals.md) for the dataset, pinned-tooling smoke command, and model-eval procedure.
+
 ## Deterministic audit scope
 
 The challenge build checks 13 bounded signals: title presence/heuristic length, meta-description presence/heuristic length, H1 presence/count, canonical link, viewport metadata, document language, images missing `alt`, and `noindex`.
@@ -75,7 +83,7 @@ Page-derived results are exposed to WebMCP with `untrustedContentHint: true`; re
 
 Astro + TypeScript run on Cloudflare Workers. The browser owns ephemeral workflow state. Both human controls and WebMCP tool handlers delegate to the same application controller; the server owns only URL policy, bounded retrieval, deterministic analysis, and coarse abuse protection.
 
-See [docs/architecture.md](docs/architecture.md), [docs/challenge-scope.md](docs/challenge-scope.md), and [docs/release-verification.md](docs/release-verification.md).
+See [docs/architecture.md](docs/architecture.md), [docs/challenge-scope.md](docs/challenge-scope.md), [docs/webmcp-evals.md](docs/webmcp-evals.md), and [docs/release-verification.md](docs/release-verification.md).
 
 ## License
 
