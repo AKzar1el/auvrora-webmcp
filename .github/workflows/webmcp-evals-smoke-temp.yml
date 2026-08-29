@@ -37,16 +37,32 @@ jobs:
           npm ci
           npm run build
 
-      - name: Prepare deterministic smoke cases
+      - name: Prepare deterministic smoke batches
         run: |
           jq '[.[] | select(.expectedCall != null)]' evals/webmcp-evals.json > "$RUNNER_TEMP/loopfix-smoke.json"
           test "$(jq 'length' "$RUNNER_TEMP/loopfix-smoke.json")" -eq 9
+          jq '.[0:5]' "$RUNNER_TEMP/loopfix-smoke.json" > "$RUNNER_TEMP/loopfix-smoke-a.json"
+          jq '.[5:9]' "$RUNNER_TEMP/loopfix-smoke.json" > "$RUNNER_TEMP/loopfix-smoke-b.json"
+          test "$(jq 'length' "$RUNNER_TEMP/loopfix-smoke-a.json")" -eq 5
+          test "$(jq 'length' "$RUNNER_TEMP/loopfix-smoke-b.json")" -eq 4
 
-      - name: Execute LoopFix eval trajectories against production
+      - name: Execute first smoke batch against production
         run: |
           node .tmp/webmcp-tools/webmcp-evals/dist/bin/webmcp-evals.js \
             --chrome-channel chrome \
             smoke \
             -u https://loopfix-webmcp.tomi-seregi99.workers.dev \
-            -e "$RUNNER_TEMP/loopfix-smoke.json" \
+            -e "$RUNNER_TEMP/loopfix-smoke-a.json" \
+            -v
+
+      - name: Wait for production limiter window
+        run: sleep 65
+
+      - name: Execute second smoke batch against production
+        run: |
+          node .tmp/webmcp-tools/webmcp-evals/dist/bin/webmcp-evals.js \
+            --chrome-channel chrome \
+            smoke \
+            -u https://loopfix-webmcp.tomi-seregi99.workers.dev \
+            -e "$RUNNER_TEMP/loopfix-smoke-b.json" \
             -v
