@@ -1,0 +1,88 @@
+{
+  "tools": [
+    {
+      "name": "run_audit",
+      "description": "Run LoopFix's bounded deterministic audit for one public HTTP or HTTPS page and make it the active visible audit.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Complete public HTTP or HTTPS page URL to audit."
+          }
+        },
+        "required": ["url"]
+      },
+      "outputSchema": null
+    },
+    {
+      "name": "list_findings",
+      "description": "List compact findings from the active LoopFix audit, optionally filtered by severity. Returns at most the requested limit and may truncate for output safety.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": ["error", "warning", "notice"],
+            "description": "Optional severity filter."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "description": "Maximum findings to return; defaults to 10."
+          }
+        }
+      },
+      "outputSchema": null
+    },
+    {
+      "name": "inspect_finding",
+      "description": "Inspect one current finding's bounded evidence, rationale, and deterministic remediation guidance by finding ID.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "findingId": {
+            "type": "string",
+            "description": "Finding ID returned by list_findings."
+          }
+        },
+        "required": ["findingId"]
+      },
+      "outputSchema": null
+    },
+    {
+      "name": "set_fix_scope",
+      "description": "Set the visible LoopFix fix scope to one through ten finding IDs from the active audit. This changes only local application state.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "findingIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1,
+            "maxItems": 10,
+            "uniqueItems": true,
+            "description": "One to ten current finding IDs to include in the fix scope."
+          }
+        },
+        "required": ["findingIds"]
+      },
+      "outputSchema": null
+    },
+    {
+      "name": "verify_fix_scope",
+      "description": "Re-audit the active canonical URL and compare the selected finding IDs. No replacement URL is accepted.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "outputSchema": null
+    }
+  ]
+}
