@@ -10,7 +10,7 @@ The dataset follows Chrome's current WebMCP evaluation guidance and the JSON for
 
 - `evals/tools.json` — static snapshot of the five public WebMCP tool names, descriptions, and input schemas for schema-only model evals.
 - `evals/webmcp-evals.json` — ten natural-language cases covering direct requests, ambiguous intent, multi-step journeys, recovery from missing state, and a request that should not invoke any LoopFix tool.
-- `test/webmcp-evals.test.ts` — deterministic guard that verifies the tool snapshot still matches the production WebMCP contract and that the eval suite stays structurally valid.
+- `test/webmcp-evals.test.ts` — deterministic guards that keep the snapshot aligned with production, validate suite structure, and reject internally inconsistent mocked tool results.
 
 The static tool snapshot is intentionally duplicated for compatibility with external eval tooling. CI compares it with the production tool definitions so the copy cannot silently drift.
 
@@ -35,11 +35,24 @@ The example target is `https://example.com/`, a stable public documentation doma
 
 `npm test` validates the eval artifacts together with the rest of the application tests. This requires no model API key and is suitable for normal CI.
 
+The eval guard verifies that:
+
+- the static tool snapshot exactly matches the production WebMCP names, descriptions, and input schemas;
+- exactly ten categorized eval cases remain present;
+- all expected calls reference current LoopFix tools;
+- the refusal case remains a genuine no-tool expectation;
+- at least one multi-step journey remains covered; and
+- mocked `list_findings` results are internally coherent.
+
 ## Deterministic live smoke
 
-GoogleChromeLabs `webmcp-evals` includes a `smoke` mode that executes the authored `expectedCall` trajectory directly against a live WebMCP page without an LLM or API key. This verifies that the eval trajectories remain executable against the deployed application.
+GoogleChromeLabs `webmcp-evals` includes a `smoke` mode that executes authored required tool calls directly against a live WebMCP page without an LLM or model API key. This verifies that concrete eval trajectories remain executable against the deployed application.
 
-Using the GoogleChromeLabs repository at a reviewed commit:
+The committed suite also contains one `expectedCall: null` refusal case. That case is intentionally for probabilistic model-selection evaluation: the upstream smoke command requires at least one required tool call, so a no-tool case must be excluded from deterministic smoke rather than converted into a fake call.
+
+LoopFix's production abuse boundary allows 10 audit starts per minute per derived key. The nine executable cases together initiate more than ten audits because `verify_fix_scope` performs a fresh audit. Do not disable or loosen that production control for testing; split smoke execution across limiter windows instead.
+
+Using the GoogleChromeLabs repository at the reviewed commit `97e6fbe83fc3f2e3c6df2198b962dd2ad59cb924`:
 
 ```bash
 git clone https://github.com/GoogleChromeLabs/webmcp-tools.git
@@ -48,13 +61,36 @@ git checkout 97e6fbe83fc3f2e3c6df2198b962dd2ad59cb924
 cd webmcp-evals
 npm ci
 npm run build
+
+jq '[.[] | select(.expectedCall != null)]' \
+  /absolute/path/to/loopfix-mcp/evals/webmcp-evals.json \
+  > /tmp/loopfix-smoke.json
+jq '.[0:5]' /tmp/loopfix-smoke.json > /tmp/loopfix-smoke-a.json
+jq '.[5:9]' /tmp/loopfix-smoke.json > /tmp/loopfix-smoke-b.json
+
 node dist/bin/webmcp-evals.js --chrome-channel chrome smoke \
   -u https://loopfix-webmcp.tomi-seregi99.workers.dev \
-  -e /absolute/path/to/loopfix-mcp/evals/webmcp-evals.json \
+  -e /tmp/loopfix-smoke-a.json \
+  -v
+
+sleep 65
+
+node dist/bin/webmcp-evals.js --chrome-channel chrome smoke \
+  -u https://loopfix-webmcp.tomi-seregi99.workers.dev \
+  -e /tmp/loopfix-smoke-b.json \
   -v
 ```
 
-`webmcp-evals` is experimental upstream tooling, so LoopFix does not add it as a production dependency.
+### Verified result
+
+On **August 29, 2026**, the pinned upstream CLI executed the nine callable cases against the public production Worker using Chrome and passed **29/29 required tool steps**:
+
+- batch A: **12/12** steps across five cases;
+- batch B: **17/17** steps across four cases.
+
+The run exercised all five LoopFix WebMCP tools, including both one-finding and two-finding verification journeys and the recovery-from-empty-state journey. The no-tool refusal case is not included in this count because deterministic smoke cannot evaluate an intentional absence of tool calls.
+
+`webmcp-evals` is experimental upstream tooling and is executed from a pinned checkout in a disposable verification environment. LoopFix does not add it to its application dependency graph.
 
 ## Probabilistic model evals
 
