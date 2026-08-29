@@ -1,0 +1,432 @@
+[
+  {
+    "name": "[direct] audit a public page",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Audit https://example.com/ with LoopFix."
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "run_audit",
+        "arguments": { "url": "https://example.com/" }
+      }
+    ]
+  },
+  {
+    "name": "[direct] audit then list findings",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Check https://example.com/ and show me the audit findings."
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "run_audit",
+        "arguments": { "url": "https://example.com/" },
+        "mockOutput": {
+          "canonicalUrl": "https://example.com/",
+          "totalFindings": 3,
+          "counts": { "error": 1, "warning": 1, "notice": 1 },
+          "next": "Use list_findings to inspect the bounded results."
+        }
+      },
+      {
+        "functionName": "list_findings",
+        "arguments": { "limit": 10 }
+      }
+    ]
+  },
+  {
+    "name": "[direct] inspect the missing meta description",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Audit https://example.com/, find the missing meta description issue, and inspect its evidence and recommended action."
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "run_audit",
+        "arguments": { "url": "https://example.com/" },
+        "mockOutput": {
+          "canonicalUrl": "https://example.com/",
+          "totalFindings": 3,
+          "counts": { "error": 1, "warning": 1, "notice": 1 }
+        }
+      },
+      {
+        "functionName": "list_findings",
+        "arguments": { "limit": 10 },
+        "mockOutput": {
+          "findings": [
+            {
+              "id": "finding:missing_meta_description",
+              "severity": "error",
+              "code": "missing_meta_description",
+              "title": "Missing meta description",
+              "affectedUrl": "https://example.com/",
+              "selected": false
+            },
+            {
+              "id": "finding:title_too_short",
+              "severity": "warning",
+              "code": "title_too_short",
+              "title": "Page title is very short",
+              "affectedUrl": "https://example.com/",
+              "selected": false
+            },
+            {
+              "id": "finding:missing_canonical",
+              "severity": "notice",
+              "code": "missing_canonical",
+              "title": "No canonical link",
+              "affectedUrl": "https://example.com/",
+              "selected": false
+            }
+          ],
+          "returned": 3,
+          "available": 3,
+          "truncated": false
+        }
+      },
+      {
+        "functionName": "inspect_finding",
+        "arguments": { "findingId": "finding:missing_meta_description" }
+      }
+    ]
+  },
+  {
+    "name": "[ambiguous] focus on the highest-severity issue",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Take a look at https://example.com/ and inspect the most severe issue first."
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "run_audit",
+        "arguments": { "url": "https://example.com/" },
+        "mockOutput": {
+          "canonicalUrl": "https://example.com/",
+          "totalFindings": 3,
+          "counts": { "error": 1, "warning": 1, "notice": 1 }
+        }
+      },
+      {
+        "functionName": "list_findings",
+        "arguments": { "severity": "error", "limit": 10 },
+        "mockOutput": {
+          "findings": [
+            {
+              "id": "finding:missing_meta_description",
+              "severity": "error",
+              "code": "missing_meta_description",
+              "title": "Missing meta description",
+              "affectedUrl": "https://example.com/",
+              "selected": false
+            }
+          ],
+          "returned": 1,
+          "available": 1,
+          "truncated": false
+        }
+      },
+      {
+        "functionName": "inspect_finding",
+        "arguments": { "findingId": "finding:missing_meta_description" }
+      }
+    ]
+  },
+  {
+    "name": "[ambiguous] put the title problem into scope",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "See what's wrong with https://example.com/ and put the short page-title problem into my fix scope."
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "run_audit",
+        "arguments": { "url": "https://example.com/" },
+        "mockOutput": {
+          "canonicalUrl": "https://example.com/",
+          "totalFindings": 3,
+          "counts": { "error": 1, "warning": 1, "notice": 1 }
+        }
+      },
+      {
+        "functionName": "list_findings",
+        "arguments": { "limit": 10 },
+        "mockOutput": {
+          "findings": [
+            {
+              "id": "finding:title_too_short",
+              "severity": "warning",
+              "code": "title_too_short",
+              "title": "Page title is very short",
+              "affectedUrl": "https://example.com/",
+              "selected": false
+            }
+          ],
+          "returned": 3,
+          "available": 3,
+          "truncated": false
+        }
+      },
+      {
+        "functionName": "inspect_finding",
+        "arguments": { "findingId": "finding:title_too_short" },
+        "optional": true
+      },
+      {
+        "functionName": "set_fix_scope",
+        "arguments": { "findingIds": ["finding:title_too_short"] }
+      }
+    ]
+  },
+  {
+    "name": "[journey] inspect scope and verify one issue",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Audit https://example.com/, inspect its missing meta description, put that issue in scope, and verify the scope with a fresh audit."
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "run_audit",
+        "arguments": { "url": "https://example.com/" },
+        "mockOutput": {
+          "canonicalUrl": "https://example.com/",
+          "totalFindings": 3,
+          "counts": { "error": 1, "warning": 1, "notice": 1 }
+        }
+      },
+      {
+        "functionName": "list_findings",
+        "arguments": { "limit": 10 },
+        "mockOutput": {
+          "findings": [
+            {
+              "id": "finding:missing_meta_description",
+              "severity": "error",
+              "code": "missing_meta_description",
+              "title": "Missing meta description",
+              "affectedUrl": "https://example.com/",
+              "selected": false
+            }
+          ],
+          "returned": 3,
+          "available": 3,
+          "truncated": false
+        }
+      },
+      {
+        "functionName": "inspect_finding",
+        "arguments": { "findingId": "finding:missing_meta_description" }
+      },
+      {
+        "functionName": "set_fix_scope",
+        "arguments": { "findingIds": ["finding:missing_meta_description"] },
+        "mockOutput": {
+          "selectedCount": 1,
+          "findingIds": ["finding:missing_meta_description"]
+        }
+      },
+      {
+        "functionName": "verify_fix_scope",
+        "arguments": {}
+      }
+    ]
+  },
+  {
+    "name": "[journey] scope two findings and verify together",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Audit https://example.com/, put both the missing meta description and short title findings into the fix scope, then verify that scope."
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "run_audit",
+        "arguments": { "url": "https://example.com/" },
+        "mockOutput": {
+          "canonicalUrl": "https://example.com/",
+          "totalFindings": 3,
+          "counts": { "error": 1, "warning": 1, "notice": 1 }
+        }
+      },
+      {
+        "functionName": "list_findings",
+        "arguments": { "limit": 10 },
+        "mockOutput": {
+          "findings": [
+            {
+              "id": "finding:missing_meta_description",
+              "severity": "error",
+              "code": "missing_meta_description",
+              "title": "Missing meta description",
+              "affectedUrl": "https://example.com/",
+              "selected": false
+            },
+            {
+              "id": "finding:title_too_short",
+              "severity": "warning",
+              "code": "title_too_short",
+              "title": "Page title is very short",
+              "affectedUrl": "https://example.com/",
+              "selected": false
+            }
+          ],
+          "returned": 3,
+          "available": 3,
+          "truncated": false
+        }
+      },
+      {
+        "functionName": "set_fix_scope",
+        "arguments": {
+          "findingIds": [
+            "finding:missing_meta_description",
+            "finding:title_too_short"
+          ]
+        },
+        "mockOutput": {
+          "selectedCount": 2,
+          "findingIds": [
+            "finding:missing_meta_description",
+            "finding:title_too_short"
+          ]
+        }
+      },
+      {
+        "functionName": "verify_fix_scope",
+        "arguments": {}
+      }
+    ]
+  },
+  {
+    "name": "[journey] investigate before selecting the error",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Audit https://example.com/. Before changing any scope, inspect the error-level finding so I understand why it matters, then select it for fixing."
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "run_audit",
+        "arguments": { "url": "https://example.com/" },
+        "mockOutput": {
+          "canonicalUrl": "https://example.com/",
+          "totalFindings": 3,
+          "counts": { "error": 1, "warning": 1, "notice": 1 }
+        }
+      },
+      {
+        "functionName": "list_findings",
+        "arguments": { "severity": "error", "limit": 10 },
+        "mockOutput": {
+          "findings": [
+            {
+              "id": "finding:missing_meta_description",
+              "severity": "error",
+              "code": "missing_meta_description",
+              "title": "Missing meta description",
+              "affectedUrl": "https://example.com/",
+              "selected": false
+            }
+          ],
+          "returned": 1,
+          "available": 1,
+          "truncated": false
+        }
+      },
+      {
+        "functionName": "inspect_finding",
+        "arguments": { "findingId": "finding:missing_meta_description" }
+      },
+      {
+        "functionName": "set_fix_scope",
+        "arguments": { "findingIds": ["finding:missing_meta_description"] }
+      }
+    ]
+  },
+  {
+    "name": "[recovery] establish missing state before verification",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "I just opened LoopFix and nothing is loaded yet. Verify the short-title issue on https://example.com/; establish whatever audit and scope state you need first."
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "run_audit",
+        "arguments": { "url": "https://example.com/" },
+        "mockOutput": {
+          "canonicalUrl": "https://example.com/",
+          "totalFindings": 3,
+          "counts": { "error": 1, "warning": 1, "notice": 1 }
+        }
+      },
+      {
+        "functionName": "list_findings",
+        "arguments": { "limit": 10 },
+        "mockOutput": {
+          "findings": [
+            {
+              "id": "finding:title_too_short",
+              "severity": "warning",
+              "code": "title_too_short",
+              "title": "Page title is very short",
+              "affectedUrl": "https://example.com/",
+              "selected": false
+            }
+          ],
+          "returned": 3,
+          "available": 3,
+          "truncated": false
+        }
+      },
+      {
+        "functionName": "set_fix_scope",
+        "arguments": { "findingIds": ["finding:title_too_short"] },
+        "mockOutput": {
+          "selectedCount": 1,
+          "findingIds": ["finding:title_too_short"]
+        }
+      },
+      {
+        "functionName": "verify_fix_scope",
+        "arguments": {}
+      }
+    ]
+  },
+  {
+    "name": "[refusal] do not invent a website mutation tool",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Change the title and meta description on https://example.com/ and deploy the fixes for me."
+      }
+    ],
+    "expectedCall": null
+  }
+]
