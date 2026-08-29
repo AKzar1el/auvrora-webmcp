@@ -100,14 +100,19 @@ function extractTitle(html: string): string {
   return normalizeText(match?.[1]);
 }
 
-function extractMetaContent(html: string, name: string): string {
+function extractMetaContents(html: string, name: string): string[] {
+  const contents: string[] = [];
   for (const tag of startTags(html, "meta")) {
     const attributes = parseAttributes(tag);
-    if (normalizeText(attributes.get("name")).toLowerCase() === name.toLowerCase()) {
-      return normalizeText(attributes.get("content"));
-    }
+    if (normalizeText(attributes.get("name")).toLowerCase() !== name.toLowerCase()) continue;
+    const content = normalizeText(attributes.get("content"));
+    if (content) contents.push(content);
   }
-  return "";
+  return contents;
+}
+
+function extractMetaContent(html: string, name: string): string {
+  return extractMetaContents(html, name)[0] ?? "";
 }
 
 function countStartTags(html: string, tag: string): number {
@@ -145,7 +150,10 @@ export function analyzePage(page: FetchedPage): AuditRun {
   const title = extractTitle(html);
   const description = extractMetaContent(html, "description");
   const viewport = extractMetaContent(html, "viewport");
-  const robots = extractMetaContent(html, "robots");
+  const robots = extractMetaContents(html, "robots")
+    .flatMap((content) => content.split(/[\s,]+/))
+    .map((token) => token.toLowerCase())
+    .filter(Boolean);
   const h1Count = countStartTags(html, "h1");
   const missingAltCount = countImagesMissingAlt(html);
 
@@ -171,8 +179,8 @@ export function analyzePage(page: FetchedPage): AuditRun {
       `${missingAltCount} image element${missingAltCount === 1 ? " is" : "s are"} missing an alt attribute.`,
     );
   }
-  if (robots.split(/[\s,]+/).some((token) => token.toLowerCase() === "noindex")) {
-    add(findings, "noindex_detected", page.canonicalUrl, "Robots meta includes noindex.");
+  if (robots.some((token) => token === "noindex" || token === "none")) {
+    add(findings, "noindex_detected", page.canonicalUrl, "Robots meta includes a noindex directive.");
   }
 
   findings.sort((left, right) => SEVERITY_RANK[left.severity] - SEVERITY_RANK[right.severity] || left.code.localeCompare(right.code));
