@@ -170,10 +170,26 @@
         "mockOutput": {
           "findings": [
             {
+              "id": "finding:missing_meta_description",
+              "severity": "error",
+              "code": "missing_meta_description",
+              "title": "Missing meta description",
+              "affectedUrl": "https://example.com/",
+              "selected": false
+            },
+            {
               "id": "finding:title_too_short",
               "severity": "warning",
               "code": "title_too_short",
               "title": "Page title is very short",
+              "affectedUrl": "https://example.com/",
+              "selected": false
+            },
+            {
+              "id": "finding:missing_canonical",
+              "severity": "notice",
+              "code": "missing_canonical",
+              "title": "No canonical link",
               "affectedUrl": "https://example.com/",
               "selected": false
             }
@@ -223,6 +239,22 @@
               "severity": "error",
               "code": "missing_meta_description",
               "title": "Missing meta description",
+              "affectedUrl": "https://example.com/",
+              "selected": false
+            },
+            {
+              "id": "finding:title_too_short",
+              "severity": "warning",
+              "code": "title_too_short",
+              "title": "Page title is very short",
+              "affectedUrl": "https://example.com/",
+              "selected": false
+            },
+            {
+              "id": "finding:missing_canonical",
+              "severity": "notice",
+              "code": "missing_canonical",
+              "title": "No canonical link",
               "affectedUrl": "https://example.com/",
               "selected": false
             }
@@ -287,6 +319,14 @@
               "severity": "warning",
               "code": "title_too_short",
               "title": "Page title is very short",
+              "affectedUrl": "https://example.com/",
+              "selected": false
+            },
+            {
+              "id": "finding:missing_canonical",
+              "severity": "notice",
+              "code": "missing_canonical",
+              "title": "No canonical link",
               "affectedUrl": "https://example.com/",
               "selected": false
             }
@@ -391,10 +431,26 @@
         "mockOutput": {
           "findings": [
             {
+              "id": "finding:missing_meta_description",
+              "severity": "error",
+              "code": "missing_meta_description",
+              "title": "Missing meta description",
+              "affectedUrl": "https://example.com/",
+              "selected": false
+            },
+            {
               "id": "finding:title_too_short",
               "severity": "warning",
               "code": "title_too_short",
               "title": "Page title is very short",
+              "affectedUrl": "https://example.com/",
+              "selected": false
+            },
+            {
+              "id": "finding:missing_canonical",
+              "severity": "notice",
+              "code": "missing_canonical",
+              "title": "No canonical link",
               "affectedUrl": "https://example.com/",
               "selected": false
             }
