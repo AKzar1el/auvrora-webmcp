@@ -80,11 +80,12 @@ export function createLoopFixController(options: ControllerOptions = {}): LoopFi
       const state = store.getState();
       if (!state.audit) throw new Error("Run an audit before verification.");
       if (state.selectedFindingIds.length === 0) throw new Error("Select a fix scope before verification.");
+      const requestVersion = auditRequestVersion;
 
       const freshAudit = state.mode === "demo"
         ? afterDemo
         : await auditClient(state.audit.canonicalUrl, signal);
-      if (store.getState() !== state) {
+      if (store.getState() !== state || requestVersion !== auditRequestVersion) {
         throw new Error("The active audit or fix scope changed during verification. Run verification again.");
       }
       const results = compareSelectedFindings([...state.selectedFindingIds], state.audit, freshAudit);
