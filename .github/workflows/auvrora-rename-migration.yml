@@ -37,14 +37,12 @@ jobs:
 
           root = Path('.')
           allowed = {'.astro', '.css', '.html', '.js', '.json', '.jsonc', '.md', '.mjs', '.ts', '.yml', '.yaml'}
-          excluded = {
-              Path('test/brand-consistency.test.ts'),
-              Path('.github/workflows/auvrora-rename-migration.yml'),
-          }
-          skip_parts = {'.git', 'node_modules', 'dist'}
+          skip_parts = {'.git', '.github', 'node_modules', 'dist'}
 
           for path in root.rglob('*'):
-              if not path.is_file() or path in excluded or any(part in skip_parts for part in path.parts):
+              if not path.is_file() or any(part in skip_parts for part in path.parts):
+                  continue
+              if path == Path('test/brand-consistency.test.ts'):
                   continue
               if path.suffix.lower() not in allowed and path.name not in {'README.md', 'package-lock.json'}:
                   continue
@@ -102,13 +100,12 @@ jobs:
       - name: Build Worker
         run: npm run build
 
-      - name: Commit migration and remove temporary workflow
+      - name: Commit migration
         shell: bash
         run: |
           set -euo pipefail
-          rm .github/workflows/auvrora-rename-migration.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add README.md package.json package-lock.json wrangler.jsonc src docs evals test
           git commit -m "refactor: rename LoopFix to Auvrora"
           git push origin HEAD:feat/auvrora-rename
