@@ -54,4 +54,10 @@ describe("Auvrora brand consistency", () => {
     expect(readme).toContain("https://github.com/AKzar1el/auvrora-webmcp.git");
     expect(basename(root)).not.toBe("");
   });
+
+  it("uses Auvrora initials in the visible header mark", async () => {
+    const page = await readFile(join(root, "src/pages/index.astro"), "utf8");
+    expect(page).toContain('<span class="brand-mark" aria-hidden="true">AU</span>');
+    expect(page).not.toContain('<span class="brand-mark" aria-hidden="true">LF</span>');
+  });
 });
