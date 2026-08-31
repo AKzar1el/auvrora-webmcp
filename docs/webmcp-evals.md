@@ -83,12 +83,16 @@ node dist/bin/webmcp-evals.js --chrome-channel chrome smoke \
 
 ### Verified result
 
-On **August 29, 2026**, the pinned upstream CLI executed the nine callable cases against the public production Worker using Chrome and passed **29/29 required tool steps**:
+On **August 31, 2026**, the pinned upstream CLI executed the nine callable cases against the public Auvrora production Worker using Chrome and passed **29/29 required tool steps**:
 
 - batch A: **12/12** steps across five cases;
 - batch B: **17/17** steps across four cases.
 
 The run exercised all five Auvrora WebMCP tools, including both one-finding and two-finding verification journeys and the recovery-from-empty-state journey. The no-tool refusal case is not included in this count because deterministic smoke cannot evaluate an intentional absence of tool calls.
+
+The live target for this verification was:
+
+`https://auvrora-webmcp.tomi-seregi99.workers.dev`
 
 `webmcp-evals` is experimental upstream tooling and is executed from a pinned checkout in a disposable verification environment. Auvrora does not add it to its application dependency graph.
 
