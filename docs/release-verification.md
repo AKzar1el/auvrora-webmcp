@@ -31,11 +31,11 @@ The production Worker reported the expected bindings:
 
 ## Rename and brand-consistency verification
 
-The LoopFix → Auvrora migration was treated as a bounded rename rather than a feature change. No WebMCP tool name, input schema, application capability, audit rule, API route, security policy, or workflow behavior was intentionally changed.
+The Auvrora brand migration was treated as a bounded rename rather than a feature change. No WebMCP tool name, input schema, application capability, audit rule, API route, security policy, or workflow behavior was intentionally changed.
 
 A dedicated regression gate verifies that:
 
-- no stale `LoopFix`, old Worker URL, old repository slug, or `loopfix-client` reference remains in the public application/docs/eval tree;
+- no stale pre-rename branding, Worker URL, repository slug, or brand-specific client reference remains in the public application/docs/eval tree;
 - package metadata uses `auvrora-webmcp`;
 - Wrangler deploys `auvrora-webmcp`;
 - README links point to the Auvrora Worker and repository;
@@ -67,7 +67,7 @@ The pre-submission hardening sweep remains part of the test suite. It covers, am
 The freshly deployed Auvrora URL passed live checks against the public Cloudflare Worker:
 
 - `/`: HTTP 200.
-- Production HTML contains **Auvrora** and no stale **LoopFix** branding.
+- Production HTML contains **Auvrora** and no stale pre-rename branding.
 - `Content-Security-Policy` header present.
 - `Permissions-Policy` header present.
 - `X-Content-Type-Options: nosniff` present.
@@ -124,4 +124,4 @@ The analyzer is intentionally a small deterministic audit scanner rather than a 
 
 ## Cutover policy
 
-The previous `loopfix-webmcp` Worker was intentionally left available as a rollback target while the Auvrora repository/production migration was verified. It should be retired only after the Auvrora source has landed on `main`, the GitHub repository rename has completed, and the new canonical repository/live URLs have been checked.
+The previous production Worker was intentionally left available as a rollback target while the Auvrora repository/production migration was verified. It should be retired only after the Auvrora source has landed on `main`, the GitHub repository rename has completed, and the new canonical repository/live URLs have been checked.
