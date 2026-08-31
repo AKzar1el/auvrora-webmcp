@@ -1,24 +1,26 @@
 # Release verification
 
-Verified on **August 29, 2026** for the OpenAI WebMCP Challenge.
+Verified on **August 31, 2026** for the OpenAI WebMCP Challenge.
 
 ## Production artifact
 
+- Product: **Auvrora WebMCP**
 - Live URL: <https://auvrora-webmcp.tomi-seregi99.workers.dev>
 - Cloudflare Worker: `auvrora-webmcp`
-- Deployed Worker version: `3650c7b0-43bc-4c34-aa06-43e9c7989bb0`
-- Runtime source commit: `14d61877d05aee83fb9d0b11ffb6a8e7f98af156`
+- Deployed Worker version: `dddbe4bc-6477-42f7-9a31-d4bf2655ca69`
+- Runtime source commit: `8ee2e5a989895601b9dc4b01bab75929ce16d32e`
+- Runtime stack: Astro + TypeScript on Cloudflare Workers
 
-Subsequent repository commits add tests, WebMCP evaluation fixtures, and documentation only; they do not change the deployed runtime code.
+The deployment runner used the source from the runtime commit above. Its disposable cutover branch contained only verification/credential-transport workflow files in addition to that source; those operational files are not part of the production application.
 
-## Clean build gate for the deployed runtime
+## Clean build gate
 
-The final hardened runtime source was verified repeatedly before and after integration, and again by the production deployment runner:
+The final Auvrora runtime source passed the complete repository gate before deployment and again inside the cutover runner:
 
 - `npm ci`: success; npm reported **0 vulnerabilities**.
 - `wrangler types --check`: generated Worker types current.
-- `astro check`: **0 errors, 0 warnings, 0 hints**.
-- Vitest: **17 files / 99 tests passed**.
+- `astro check`: **46 files, 0 errors, 0 warnings, 0 hints**.
+- Vitest: **19 files / 107 tests passed**.
 - `astro build` with `@astrojs/cloudflare`: success.
 - Wrangler 4.127.1 deployment: success.
 
@@ -27,46 +29,20 @@ The production Worker reported the expected bindings:
 - `AUDIT_RATE_LIMITER`: 10 requests / 60 seconds.
 - `ASSETS`: static assets binding.
 
-## Final hardening regression coverage
+## Rename and brand-consistency verification
 
-The pre-submission sweep added focused regression tests for issues reproduced against the prior build:
+The LoopFix → Auvrora migration was treated as a bounded rename rather than a feature change. No WebMCP tool name, input schema, application capability, audit rule, API route, security policy, or workflow behavior was intentionally changed.
 
-- stale overlapping audit requests cannot replace newer audit state;
-- verification cannot attach to a changed or newly superseded audit/fix scope;
-- hexadecimal numeric HTML character references are normalized before heuristic text-length checks;
-- quoted `>` characters no longer truncate valid HTML start tags;
-- multiple robots meta tags are combined and the standard `none` directive is treated as noindex-equivalent;
-- Auvrora's own title and canonical metadata stay consistent with its deterministic audit rules.
+A dedicated regression gate verifies that:
 
-No new framework, runtime dependency, authentication system, database, AI backend, crawler scope, or WebMCP tool was introduced by the hardening sweep.
+- no stale `LoopFix`, old Worker URL, old repository slug, or `loopfix-client` reference remains in the public application/docs/eval tree;
+- package metadata uses `auvrora-webmcp`;
+- Wrangler deploys `auvrora-webmcp`;
+- README links point to the Auvrora Worker and repository;
+- the visible header uses the Auvrora name and `AU` mark; and
+- brand-specific client/spec/plan paths use Auvrora naming.
 
-## Production HTTP, security, and stress verification
-
-The freshly deployed production URL passed the following checks:
-
-- `/`: HTTP 200 on the first readiness attempt.
-- Final page title and production canonical URL present.
-- `Content-Security-Policy` header present.
-- `Permissions-Policy` header present.
-- `X-Content-Type-Options: nosniff` present.
-- `Referrer-Policy: no-referrer` present.
-- `X-Frame-Options: DENY` present.
-- Auvrora audited its own production URL with **zero deterministic findings**.
-- Malformed JSON was rejected.
-- A non-JSON form-style POST was rejected by Astro's CSRF protection with HTTP 403.
-- An oversized request body was rejected.
-- Requests containing undeclared JSON properties were rejected.
-- Literal loopback/link-local targets including `127.0.0.1`, `169.254.169.254`, and `[::1]` were rejected with `private_url`.
-- 25 parallel requests to `/` completed **25/25 with HTTP 200**.
-- 20 parallel production audit requests completed **20/20 with HTTP 200** and no 5xx responses.
-
-These checks exercise the public runtime rather than only a local or CI build.
-
-## Native WebMCP browser verification
-
-The hardened production URL was tested with **Google Chrome 151.0.7922.173** with WebMCP testing enabled.
-
-Chrome discovered exactly these five page tools through `document.modelContext`:
+The public WebMCP tool surface remains exactly:
 
 1. `run_audit`
 2. `list_findings`
@@ -74,62 +50,62 @@ Chrome discovered exactly these five page tools through `document.modelContext`:
 4. `set_fix_scope`
 5. `verify_fix_scope`
 
-Each tool was executed against the production page through native `document.modelContext.executeTool()` and passed:
+## Earlier hardening regression coverage
 
-- `run_audit`: passed against `https://example.com/`.
-- `list_findings`: returned deterministic findings from the active audit.
-- `inspect_finding`: returned the requested current finding.
-- `set_fix_scope`: updated the visible one-finding fix scope.
-- `verify_fix_scope`: re-audited the same canonical URL and returned the selected finding's verification result.
+The pre-submission hardening sweep remains part of the test suite. It covers, among other boundaries:
 
-### Chrome compatibility note
+- stale overlapping audit requests cannot replace newer audit state;
+- verification cannot attach to a changed or newly superseded audit/fix scope;
+- hexadecimal numeric HTML character references are normalized before heuristic text-length checks;
+- quoted `>` characters do not truncate valid HTML start tags;
+- multiple robots meta tags are combined and the standard `none` directive is treated as noindex-equivalent;
+- Auvrora's own title and canonical metadata stay consistent with its deterministic audit rules; and
+- browser/WebMCP callback compatibility preserves cancellation when an `AbortSignal` is supplied while tolerating the manual Chrome path that omits callback options.
 
-Current Chrome manual `executeTool()` inputs are provided as a JSON string. During production browser verification, Chrome 151 also did not provide the tool callback's execution-options argument on this manual execution path, although current WebMCP guidance documents an execution `AbortSignal`.
+## Production HTTP and security verification
 
-Auvrora therefore treats callback options as optional while continuing to propagate `AbortSignal` whenever an agent/browser supplies one. Regression tests cover both the absent-options behavior and the documented signal-forwarding path.
+The freshly deployed Auvrora URL passed live checks against the public Cloudflare Worker:
 
-## Post-deployment WebMCP eval verification
+- `/`: HTTP 200.
+- Production HTML contains **Auvrora** and no stale **LoopFix** branding.
+- `Content-Security-Policy` header present.
+- `Permissions-Policy` header present.
+- `X-Content-Type-Options: nosniff` present.
+- `Referrer-Policy: no-referrer` present.
+- `X-Frame-Options: DENY` present.
+- Auvrora audited its own production URL with **zero deterministic findings**.
+- A literal loopback target (`127.0.0.1`) was rejected with HTTP 400 and `private_url`.
 
-An eval-only hardening pass added a reproducible agent-facing dataset without changing the five production tools, server behavior, Cloudflare configuration, or deployed runtime bundle.
+The existing security boundary also retains bounded request/body/redirect handling, public-only URL policy, redirect revalidation, rate limiting, and untrusted-content WebMCP annotations. See [security.md](security.md).
 
-The repository now contains **10 natural-language WebMCP eval cases** covering:
+## Native WebMCP browser and trajectory verification
 
-- direct audit/tool-selection requests;
-- ambiguous severity and scope requests;
-- multi-step audit → inspect → scope → verify journeys;
-- inspect-before-mutate ordering;
-- recovery from an empty browser state; and
-- one no-tool refusal for an unsupported website-edit/deploy request.
+The Auvrora deployment was exercised through GoogleChromeLabs' pinned `webmcp-evals` Chrome smoke runner using upstream commit `97e6fbe83fc3f2e3c6df2198b962dd2ad59cb924`.
 
-A static `evals/tools.json` snapshot contains the five public tool names, descriptions, and input schemas. Repository tests compare that snapshot with the production WebMCP definitions so schema or description drift cannot silently invalidate the eval corpus. Additional guards validate eval structure and mocked `list_findings` output coherence.
+The nine eval cases that contain executable calls were split across two limiter windows rather than weakening Auvrora's production 10-audit/minute abuse boundary.
 
-After the final eval fixture corrections, normal repository CI reported:
-
-- `npm ci`: success; Auvrora's dependency tree reported **0 vulnerabilities**;
-- `wrangler types --check`: generated Worker types current;
-- `astro check`: **45 files, 0 errors, 0 warnings, 0 hints**;
-- Vitest: **18 files / 104 tests passed**;
-- `astro build` with `@astrojs/cloudflare`: success.
-
-### Live expected-call trajectory smoke
-
-GoogleChromeLabs' experimental `webmcp-evals` CLI was executed from pinned upstream commit `97e6fbe83fc3f2e3c6df2198b962dd2ad59cb924` in a disposable GitHub Actions environment. It was not added to Auvrora's application dependency graph.
-
-The nine eval cases that contain required tool calls were executed against the public production Worker through the upstream Chrome smoke runner. Because Auvrora intentionally rate-limits audit starts to 10 per minute per derived key, the cases were split across two limiter windows rather than weakening production abuse controls.
-
-Final result:
+Final result on **August 31, 2026**:
 
 - batch A: **12/12 required steps passed** across five cases;
 - batch B: **17/17 required steps passed** across four cases;
 - combined: **29/29 required live WebMCP tool steps passed**.
 
-The live trajectory run exercised all five Auvrora tools, including one-finding verification, two-finding verification, ambiguous selection, and recovery from empty state.
+The run exercised all five public WebMCP tools on the new Auvrora URL, including:
 
-The tenth eval uses `expectedCall: null` to assert that an agent should not invent a website-edit/deploy capability. The deterministic upstream smoke command cannot evaluate the intentional absence of a call, so that case remains part of the optional probabilistic model-eval dataset rather than being converted into an artificial tool invocation.
+- direct audit and finding discovery;
+- evidence inspection;
+- ambiguous severity/scoping requests;
+- one-finding scope verification;
+- two-finding scope verification; and
+- recovery from an empty browser state.
 
-Auvrora does **not** publish a probabilistic model tool-selection pass rate because no fixed model/backend/run-count benchmark has been executed and recorded. The repository publishes the reproducible eval inputs and deterministic live trajectory evidence instead of fabricating a model result.
+Tool outputs used the new Auvrora branding where product text is returned.
 
-See [webmcp-evals.md](webmcp-evals.md) for the exact dataset, pinned smoke procedure, and optional model-eval commands.
+The tenth committed eval is an intentional `expectedCall: null` refusal for unsupported website-edit/deploy behavior. The deterministic smoke runner cannot score an intentional absence of a call, so that case remains part of the optional probabilistic model-eval dataset rather than being converted into a fake invocation.
+
+Auvrora does **not** publish a probabilistic model-selection pass rate because no fixed model/backend/run-count benchmark has been executed and recorded. The repository publishes reproducible eval inputs and deterministic live trajectory evidence instead.
+
+See [webmcp-evals.md](webmcp-evals.md) for the exact dataset and reproduction procedure.
 
 ## Security scope confirmed
 
@@ -141,9 +117,11 @@ The production build does not:
 - allow an agent to choose a replacement verification URL;
 - expose raw fetched HTML as WebMCP output;
 - use an LLM backend;
-- persist accounts or audit data;
+- persist accounts or audit data; or
 - expose its WebMCP tools cross-origin.
 
-The analyzer is intentionally a small deterministic audit scanner rather than a full browser-conformance parser. It does not currently inspect `X-Robots-Tag` response headers or perform multi-page crawling.
+The analyzer is intentionally a small deterministic audit scanner rather than a full browser-conformance parser. It does not inspect `X-Robots-Tag` response headers or perform multi-page crawling.
 
-See [security.md](security.md) for the complete threat boundary and known limitations.
+## Cutover policy
+
+The previous `loopfix-webmcp` Worker was intentionally left available as a rollback target while the Auvrora repository/production migration was verified. It should be retired only after the Auvrora source has landed on `main`, the GitHub repository rename has completed, and the new canonical repository/live URLs have been checked.
