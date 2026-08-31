@@ -6,6 +6,7 @@ Verified on **August 31, 2026** for the OpenAI WebMCP Challenge.
 
 - Product: **Auvrora WebMCP**
 - Live URL: <https://auvrora-webmcp.tomi-seregi99.workers.dev>
+- Public repository: <https://github.com/AKzar1el/auvrora-webmcp>
 - Cloudflare Worker: `auvrora-webmcp`
 - Deployed Worker version: `dddbe4bc-6477-42f7-9a31-d4bf2655ca69`
 - Runtime source commit: `8ee2e5a989895601b9dc4b01bab75929ce16d32e`
@@ -122,6 +123,12 @@ The production build does not:
 
 The analyzer is intentionally a small deterministic audit scanner rather than a full browser-conformance parser. It does not inspect `X-Robots-Tag` response headers or perform multi-page crawling.
 
-## Cutover policy
+## Final cutover state
 
-The previous production Worker was intentionally left available as a rollback target while the Auvrora repository/production migration was verified. It should be retired only after the Auvrora source has landed on `main`, the GitHub repository rename has completed, and the new canonical repository/live URLs have been checked.
+The repository rename and infrastructure cutover are complete and verified:
+
+- the canonical public repository is `AKzar1el/auvrora-webmcp`;
+- GitHub kept the repository public with `main` as the default branch, MIT license detection, challenge topics, and the Auvrora production homepage;
+- the previous rollback Worker was retired after the new Auvrora Worker and repository were verified;
+- the canonical Auvrora Worker remained healthy after retirement of the rollback Worker; and
+- all disposable rename/cutover branches and their encrypted handoff material were deleted, leaving **only `main`**.
