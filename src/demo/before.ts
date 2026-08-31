@@ -2,7 +2,7 @@ import { createFinding } from "../lib/audit/findings.ts";
 import type { AuditRun } from "../lib/audit/types.ts";
 import { AUDIT_RULES_VERSION } from "../lib/audit/analyze-page.ts";
 
-const url = "https://demo.loopfix.example/";
+const url = "https://demo.auvrora.example/";
 
 export const demoBefore: AuditRun = {
   requestedUrl: url,

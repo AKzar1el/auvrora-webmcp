@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, expect, it } from "vitest";
 import type { AuditRun, Finding, Severity } from "../src/lib/audit/types.ts";
-import type { LoopFixController } from "../src/lib/app/controller.ts";
-import type { LoopFixState } from "../src/lib/app/state.ts";
-import { LOOPFIX_TOOL_SCHEMAS } from "../src/lib/webmcp/schemas.ts";
-import { createLoopFixTools } from "../src/lib/webmcp/tools.ts";
-import { registerLoopFixTools } from "../src/lib/webmcp/register.ts";
+import type { AuvroraController } from "../src/lib/app/controller.ts";
+import type { AuvroraState } from "../src/lib/app/state.ts";
+import { AUVRORA_TOOL_SCHEMAS } from "../src/lib/webmcp/schemas.ts";
+import { createAuvroraTools } from "../src/lib/webmcp/tools.ts";
+import { registerAuvroraTools } from "../src/lib/webmcp/register.ts";
 
 function finding(index: number, severity: Severity = "warning"): Finding {
   const code = `rule_${index}`;
@@ -33,13 +33,13 @@ function audit(findings = Array.from({ length: 12 }, (_, index) => finding(index
 
 function fakeController() {
   const calls: Array<{ name: string; value?: unknown; signal?: AbortSignal }> = [];
-  let state: LoopFixState = {
+  let state: AuvroraState = {
     mode: "live",
     audit: audit(),
     selectedFindingIds: [],
     verification: null,
   };
-  const controller: LoopFixController = {
+  const controller: AuvroraController = {
     async runAudit(url, signal) {
       calls.push({ name: "runAudit", value: url, signal });
       return state.audit!;
@@ -77,14 +77,14 @@ function executeWithoutOptions(tool: { execute: unknown }, input: unknown) {
 
 describe("WebMCP schema contract", () => {
   it("defines exactly five stable object schemas without additional properties", () => {
-    expect(Object.keys(LOOPFIX_TOOL_SCHEMAS).sort()).toEqual([
+    expect(Object.keys(AUVRORA_TOOL_SCHEMAS).sort()).toEqual([
       "inspect_finding",
       "list_findings",
       "run_audit",
       "set_fix_scope",
       "verify_fix_scope",
     ]);
-    for (const schema of Object.values(LOOPFIX_TOOL_SCHEMAS)) {
+    for (const schema of Object.values(AUVRORA_TOOL_SCHEMAS)) {
       expect(schema.type).toBe("object");
       expect(schema.additionalProperties).toBe(false);
     }
@@ -92,7 +92,7 @@ describe("WebMCP schema contract", () => {
 
   it("exposes the approved annotations and concise descriptions", () => {
     const { controller } = fakeController();
-    const tools = createLoopFixTools(controller);
+    const tools = createAuvroraTools(controller);
     const byName = Object.fromEntries(tools.map((tool) => [tool.name, tool]));
     expect(byName.run_audit.annotations).toEqual({ readOnlyHint: false, untrustedContentHint: true });
     expect(byName.list_findings.annotations).toEqual({ readOnlyHint: true, untrustedContentHint: true });
@@ -109,7 +109,7 @@ describe("WebMCP schema contract", () => {
 describe("WebMCP handlers", () => {
   it("forwards run_audit and verify_fix_scope AbortSignals", async () => {
     const { controller, calls } = fakeController();
-    const tools = createLoopFixTools(controller);
+    const tools = createAuvroraTools(controller);
     const run = tools.find((tool) => tool.name === "run_audit")!;
     const verify = tools.find((tool) => tool.name === "verify_fix_scope")!;
     const abort = new AbortController();
@@ -122,7 +122,7 @@ describe("WebMCP handlers", () => {
 
   it("runs run_audit when Chrome omits callback execution options", async () => {
     const { controller, calls } = fakeController();
-    const run = createLoopFixTools(controller).find((tool) => tool.name === "run_audit")!;
+    const run = createAuvroraTools(controller).find((tool) => tool.name === "run_audit")!;
     await executeWithoutOptions(run, { url: "https://example.org/" });
     const call = calls.find((item) => item.name === "runAudit");
     expect(call?.value).toBe("https://example.org/");
@@ -131,7 +131,7 @@ describe("WebMCP handlers", () => {
 
   it("runs verify_fix_scope when Chrome omits callback execution options", async () => {
     const { controller, calls } = fakeController();
-    const tools = createLoopFixTools(controller);
+    const tools = createAuvroraTools(controller);
     const verify = tools.find((tool) => tool.name === "verify_fix_scope")!;
     controller.setFixScope(["finding:rule_0"]);
     await executeWithoutOptions(verify, {});
@@ -140,7 +140,7 @@ describe("WebMCP handlers", () => {
 
   it("strictly rejects unknown keys and invalid input types before controller calls", async () => {
     const { controller, calls } = fakeController();
-    const tools = createLoopFixTools(controller);
+    const tools = createAuvroraTools(controller);
     const run = tools.find((tool) => tool.name === "run_audit")!;
     const list = tools.find((tool) => tool.name === "list_findings")!;
     const inspect = tools.find((tool) => tool.name === "inspect_finding")!;
@@ -158,7 +158,7 @@ describe("WebMCP handlers", () => {
 
   it("keeps read-only tools read-only", async () => {
     const { controller, calls } = fakeController();
-    const tools = createLoopFixTools(controller);
+    const tools = createAuvroraTools(controller);
     const signal = new AbortController().signal;
     await tools.find((tool) => tool.name === "list_findings")!.execute({ limit: 2 }, { signal });
     await tools.find((tool) => tool.name === "inspect_finding")!.execute({ findingId: "finding:rule_0" }, { signal });
@@ -167,7 +167,7 @@ describe("WebMCP handlers", () => {
 
   it("bounds list and inspection results without returning raw HTML", async () => {
     const { controller } = fakeController();
-    const tools = createLoopFixTools(controller);
+    const tools = createAuvroraTools(controller);
     const signal = new AbortController().signal;
     const list = await tools.find((tool) => tool.name === "list_findings")!.execute({ limit: 10 }, { signal });
     const inspected = await tools.find((tool) => tool.name === "inspect_finding")!.execute({ findingId: "finding:rule_0" }, { signal });
@@ -178,7 +178,7 @@ describe("WebMCP handlers", () => {
 
   it("reports filtered availability independently from the requested list limit", async () => {
     const { controller } = fakeController();
-    const list = createLoopFixTools(controller).find((tool) => tool.name === "list_findings")!;
+    const list = createAuvroraTools(controller).find((tool) => tool.name === "list_findings")!;
     const result = await list.execute({ limit: 2 }, { signal: new AbortController().signal }) as {
       returned: number;
       available: number;
@@ -190,7 +190,7 @@ describe("WebMCP handlers", () => {
   it("preserves AbortError cancellation instead of converting it into a generic tool failure", async () => {
     const { controller } = fakeController();
     controller.runAudit = async () => { throw new DOMException("Cancelled", "AbortError"); };
-    const run = createLoopFixTools(controller).find((tool) => tool.name === "run_audit")!;
+    const run = createAuvroraTools(controller).find((tool) => tool.name === "run_audit")!;
     await assert.rejects(
       () => run.execute({ url: "https://example.org/" }, { signal: new AbortController().signal }),
       (error: unknown) => error instanceof DOMException && error.name === "AbortError",
@@ -200,7 +200,7 @@ describe("WebMCP handlers", () => {
   it("turns controller failures into short actionable errors", async () => {
     const { controller } = fakeController();
     controller.inspectFinding = () => { throw new Error("x".repeat(1000)); };
-    const inspect = createLoopFixTools(controller).find((tool) => tool.name === "inspect_finding")!;
+    const inspect = createAuvroraTools(controller).find((tool) => tool.name === "inspect_finding")!;
     await assert.rejects(() => inspect.execute({ findingId: "finding:rule_0" }, { signal: new AbortController().signal }), (error: unknown) => {
       if (!(error instanceof Error)) return false;
       assert.ok(error.message.length <= 220);
@@ -222,7 +222,7 @@ describe("WebMCP registration", () => {
       },
     });
     try {
-      const result = await registerLoopFixTools(controller);
+      const result = await registerAuvroraTools(controller);
       expect(result.supported).toBe(true);
       expect(result.count).toBe(5);
       expect(registrations.map((item) => item.name).sort()).toEqual([
@@ -239,7 +239,7 @@ describe("WebMCP registration", () => {
 
   it("returns an inert result when the browser does not expose modelContext", async () => {
     const { controller } = fakeController();
-    const result = await registerLoopFixTools(controller);
+    const result = await registerAuvroraTools(controller);
     expect(result.supported).toBe(false);
     expect(result.count).toBe(0);
     result.dispose();

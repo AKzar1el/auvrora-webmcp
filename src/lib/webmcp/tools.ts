@@ -1,14 +1,14 @@
-import type { LoopFixController } from "../app/controller.ts";
+import type { AuvroraController } from "../app/controller.ts";
 import type { Severity } from "../audit/types.ts";
-import { LOOPFIX_TOOL_SCHEMAS } from "./schemas.ts";
+import { AUVRORA_TOOL_SCHEMAS } from "./schemas.ts";
 
 export type ToolExecutionOptions = { signal?: AbortSignal };
 
-export type LoopFixToolDefinition = {
-  name: keyof typeof LOOPFIX_TOOL_SCHEMAS;
+export type AuvroraToolDefinition = {
+  name: keyof typeof AUVRORA_TOOL_SCHEMAS;
   title: string;
   description: string;
-  inputSchema: (typeof LOOPFIX_TOOL_SCHEMAS)[keyof typeof LOOPFIX_TOOL_SCHEMAS];
+  inputSchema: (typeof AUVRORA_TOOL_SCHEMAS)[keyof typeof AUVRORA_TOOL_SCHEMAS];
   annotations: {
     readOnlyHint: boolean;
     untrustedContentHint: boolean;
@@ -100,7 +100,7 @@ export function assertEmptyInput(input: unknown): Record<string, never> {
 
 function errorMessage(error: unknown): string {
   if (error instanceof Error && error.message) return clip(error.message, MAX_ERROR_CHARS);
-  return "The requested LoopFix action could not be completed.";
+  return "The requested Auvrora action could not be completed.";
 }
 
 async function safeExecute<T>(operation: () => Promise<T> | T): Promise<T> {
@@ -112,7 +112,7 @@ async function safeExecute<T>(operation: () => Promise<T> | T): Promise<T> {
   }
 }
 
-function auditSummary(audit: Awaited<ReturnType<LoopFixController["runAudit"]>>) {
+function auditSummary(audit: Awaited<ReturnType<AuvroraController["runAudit"]>>) {
   const counts = { error: 0, warning: 0, notice: 0 };
   for (const finding of audit.findings) counts[finding.severity] += 1;
   return {
@@ -123,7 +123,7 @@ function auditSummary(audit: Awaited<ReturnType<LoopFixController["runAudit"]>>)
   };
 }
 
-function boundedFindingList(controller: LoopFixController, input: { severity?: Severity; limit?: number }) {
+function boundedFindingList(controller: AuvroraController, input: { severity?: Severity; limit?: number }) {
   const state = controller.getState();
   const selected = new Set(state.selectedFindingIds);
   const available = (state.audit?.findings ?? []).filter((finding) => !input.severity || finding.severity === input.severity).length;
@@ -150,13 +150,13 @@ function boundedFindingList(controller: LoopFixController, input: { severity?: S
   };
 }
 
-export function createLoopFixTools(controller: LoopFixController): LoopFixToolDefinition[] {
+export function createAuvroraTools(controller: AuvroraController): AuvroraToolDefinition[] {
   return [
     {
       name: "run_audit",
       title: "Run page audit",
-      description: "Run LoopFix's bounded deterministic audit for one public HTTP or HTTPS page and make it the active visible audit.",
-      inputSchema: LOOPFIX_TOOL_SCHEMAS.run_audit,
+      description: "Run Auvrora's bounded deterministic audit for one public HTTP or HTTPS page and make it the active visible audit.",
+      inputSchema: AUVRORA_TOOL_SCHEMAS.run_audit,
       annotations: { readOnlyHint: false, untrustedContentHint: true },
       execute: (input, options) => safeExecute(async () => {
         const { url } = assertRunAuditInput(input);
@@ -166,8 +166,8 @@ export function createLoopFixTools(controller: LoopFixController): LoopFixToolDe
     {
       name: "list_findings",
       title: "List audit findings",
-      description: "List compact findings from the active LoopFix audit, optionally filtered by severity. Returns at most the requested limit and may truncate for output safety.",
-      inputSchema: LOOPFIX_TOOL_SCHEMAS.list_findings,
+      description: "List compact findings from the active Auvrora audit, optionally filtered by severity. Returns at most the requested limit and may truncate for output safety.",
+      inputSchema: AUVRORA_TOOL_SCHEMAS.list_findings,
       annotations: { readOnlyHint: true, untrustedContentHint: true },
       execute: (input) => safeExecute(() => boundedFindingList(controller, assertListFindingsInput(input))),
     },
@@ -175,7 +175,7 @@ export function createLoopFixTools(controller: LoopFixController): LoopFixToolDe
       name: "inspect_finding",
       title: "Inspect audit finding",
       description: "Inspect one current finding's bounded evidence, rationale, and deterministic remediation guidance by finding ID.",
-      inputSchema: LOOPFIX_TOOL_SCHEMAS.inspect_finding,
+      inputSchema: AUVRORA_TOOL_SCHEMAS.inspect_finding,
       annotations: { readOnlyHint: true, untrustedContentHint: true },
       execute: (input) => safeExecute(() => {
         const { findingId } = assertInspectFindingInput(input);
@@ -195,8 +195,8 @@ export function createLoopFixTools(controller: LoopFixController): LoopFixToolDe
     {
       name: "set_fix_scope",
       title: "Set fix scope",
-      description: "Set the visible LoopFix fix scope to one through ten finding IDs from the active audit. This changes only local application state.",
-      inputSchema: LOOPFIX_TOOL_SCHEMAS.set_fix_scope,
+      description: "Set the visible Auvrora fix scope to one through ten finding IDs from the active audit. This changes only local application state.",
+      inputSchema: AUVRORA_TOOL_SCHEMAS.set_fix_scope,
       annotations: { readOnlyHint: false, untrustedContentHint: true },
       execute: (input) => safeExecute(() => {
         const { findingIds } = assertSetFixScopeInput(input);
@@ -204,7 +204,7 @@ export function createLoopFixTools(controller: LoopFixController): LoopFixToolDe
         return {
           selectedCount: findingIds.length,
           findingIds: findingIds.map((id) => clip(id, 80)),
-          next: "The visible fix scope is updated. Implement changes outside LoopFix, then use verify_fix_scope.",
+          next: "The visible fix scope is updated. Implement changes outside Auvrora, then use verify_fix_scope.",
         };
       }),
     },
@@ -212,7 +212,7 @@ export function createLoopFixTools(controller: LoopFixController): LoopFixToolDe
       name: "verify_fix_scope",
       title: "Verify fix scope",
       description: "Re-audit the active canonical URL and compare the selected finding IDs. No replacement URL is accepted.",
-      inputSchema: LOOPFIX_TOOL_SCHEMAS.verify_fix_scope,
+      inputSchema: AUVRORA_TOOL_SCHEMAS.verify_fix_scope,
       annotations: { readOnlyHint: false, untrustedContentHint: true },
       execute: (input, options) => safeExecute(async () => {
         assertEmptyInput(input);

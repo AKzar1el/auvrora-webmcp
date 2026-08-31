@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { AuditRuntime } from "../src/pages/api/audit.ts";
 import { handleAuditRequest } from "../src/pages/api/audit.ts";
 
-const CLEAN_HTML = `<!doctype html><html lang="en"><head><title>A sufficiently descriptive page title for testing</title><meta name="description" content="A sufficiently detailed description that passes the LoopFix heuristic without claiming to be a search-engine requirement."><meta name="viewport" content="width=device-width"><link rel="canonical" href="https://example.org/"></head><body><h1>Example</h1><img src="x.png" alt="Example"></body></html>`;
+const CLEAN_HTML = `<!doctype html><html lang="en"><head><title>A sufficiently descriptive page title for testing</title><meta name="description" content="A sufficiently detailed description that passes the Auvrora heuristic without claiming to be a search-engine requirement."><meta name="viewport" content="width=device-width"><link rel="canonical" href="https://example.org/"></head><body><h1>Example</h1><img src="x.png" alt="Example"></body></html>`;
 
 function runtime(overrides: Partial<AuditRuntime> = {}): AuditRuntime {
   return {
@@ -14,7 +14,7 @@ function runtime(overrides: Partial<AuditRuntime> = {}): AuditRuntime {
 }
 
 function jsonRequest(body: string, headers: HeadersInit = {}): Request {
-  return new Request("https://loopfix.example/api/audit", {
+  return new Request("https://auvrora.example/api/audit", {
     method: "POST",
     headers: { "content-type": "application/json", ...headers },
     body,
@@ -29,7 +29,7 @@ describe("handleAuditRequest", () => {
     let resolveSignal: ((signal: AbortSignal) => void) | undefined;
     const signalSeen = new Promise<AbortSignal>((resolve) => { resolveSignal = resolve; });
 
-    const responsePromise = handleAuditRequest(new Request("https://loopfix.example/api/audit", {
+    const responsePromise = handleAuditRequest(new Request("https://auvrora.example/api/audit", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ url: "https://example.org/" }),
@@ -52,13 +52,13 @@ describe("handleAuditRequest", () => {
   });
 
   it("rejects non-POST methods", async () => {
-    const response = await handleAuditRequest(new Request("https://loopfix.example/api/audit"), runtime());
+    const response = await handleAuditRequest(new Request("https://auvrora.example/api/audit"), runtime());
     expect(response.status).toBe(405);
     expect(response.headers.get("allow")).toBe("POST");
   });
 
   it("rejects non-JSON and malformed JSON bodies", async () => {
-    const plain = await handleAuditRequest(new Request("https://loopfix.example/api/audit", {
+    const plain = await handleAuditRequest(new Request("https://auvrora.example/api/audit", {
       method: "POST",
       headers: { "content-type": "text/plain" },
       body: "https://example.org/",

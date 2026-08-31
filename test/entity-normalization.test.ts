@@ -17,7 +17,7 @@ describe("HTML text normalization", () => {
     const html = `<!doctype html>
       <html lang="en"><head>
         <title>${title}</title>
-        <meta name="description" content="A sufficiently detailed description that passes the LoopFix heuristic without claiming a search-engine requirement.">
+        <meta name="description" content="A sufficiently detailed description that passes the Auvrora heuristic without claiming a search-engine requirement.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="canonical" href="https://example.org/">
       </head><body><h1>Example</h1></body></html>`;

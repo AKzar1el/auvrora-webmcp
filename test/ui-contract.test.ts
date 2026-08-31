@@ -16,10 +16,10 @@ describe("human UI source contract", () => {
     ].join("\n");
 
     for (const id of [
-      "loopfix-audit-form",
-      "loopfix-url",
-      "loopfix-run",
-      "loopfix-demo",
+      "auvrora-audit-form",
+      "auvrora-url",
+      "auvrora-run",
+      "auvrora-demo",
       "webmcp-status",
       "findings-panel",
       "fix-scope-panel",
@@ -30,17 +30,17 @@ describe("human UI source contract", () => {
     }
     expect(combined.includes("<main")).toBeTruthy();
     expect(combined.includes("aria-live=\"polite\"")).toBeTruthy();
-    expect(combined.includes("<label for=\"loopfix-url\"")).toBeTruthy();
+    expect(combined.includes("<label for=\"auvrora-url\"")).toBeTruthy();
   });
 
   it("surfaces not-verifiable verification outcomes in human-facing summaries", async () => {
-    const client = await source("src/scripts/loopfix-client.ts");
+    const client = await source("src/scripts/auvrora-client.ts");
     expect(client.includes("notVerifiable")).toBeTruthy();
     expect(client.includes("not verifiable")).toBeTruthy();
   });
 
   it("renders remote-derived data without innerHTML", async () => {
-    const client = await source("src/scripts/loopfix-client.ts");
+    const client = await source("src/scripts/auvrora-client.ts");
     expect(client.includes("innerHTML")).toBeFalsy();
     expect(client.includes("textContent")).toBeTruthy();
     expect(client.includes("createElement")).toBeTruthy();
@@ -49,8 +49,8 @@ describe("human UI source contract", () => {
 
 describe("WebMCP UI integration source contract", () => {
   it("registers tools after controller creation and keeps unsupported browsers usable", async () => {
-    const client = await source("src/scripts/loopfix-client.ts");
-    expect(client.includes("registerLoopFixTools")).toBeTruthy();
+    const client = await source("src/scripts/auvrora-client.ts");
+    expect(client.includes("registerAuvroraTools")).toBeTruthy();
     expect(client.includes("WebMCP ready ·")).toBeTruthy();
     expect(client.includes("WebMCP unavailable in this browser")).toBeTruthy();
     expect(client.includes("WebMCP registration failed")).toBeTruthy();

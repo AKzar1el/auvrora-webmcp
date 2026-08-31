@@ -9,7 +9,7 @@ describe("public challenge documentation", () => {
   it("documents the five tools, local verification, Chrome testing, and MIT license from the README first screen", async () => {
     const readme = await read("README.md");
     for (const value of [
-      "LoopFix WebMCP",
+      "Auvrora WebMCP",
       "run_audit",
       "list_findings",
       "inspect_finding",

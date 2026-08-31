@@ -5,7 +5,7 @@
       {
         "role": "user",
         "type": "message",
-        "content": "Audit https://example.com/ with LoopFix."
+        "content": "Audit https://example.com/ with Auvrora."
       }
     ],
     "expectedCall": [
@@ -412,7 +412,7 @@
       {
         "role": "user",
         "type": "message",
-        "content": "I just opened LoopFix and nothing is loaded yet. Verify the short-title issue on https://example.com/; establish whatever audit and scope state you need first."
+        "content": "I just opened Auvrora and nothing is loaded yet. Verify the short-title issue on https://example.com/; establish whatever audit and scope state you need first."
       }
     ],
     "expectedCall": [

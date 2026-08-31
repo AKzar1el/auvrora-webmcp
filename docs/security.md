@@ -1,6 +1,6 @@
 # Security model
 
-LoopFix accepts an attacker-influenced public URL and exposes part of the resulting deterministic analysis to an AI agent. Those are the two primary trust boundaries.
+Auvrora accepts an attacker-influenced public URL and exposes part of the resulting deterministic analysis to an AI agent. Those are the two primary trust boundaries.
 
 ## URL and SSRF boundary
 
@@ -12,9 +12,9 @@ The Worker also enables Cloudflare's `global_fetch_strictly_public` compatibilit
 
 ### DNS rebinding limitation
 
-Application-level hostname validation cannot prove that a public hostname will always resolve to a public address. LoopFix therefore does **not** claim complete DNS-rebinding prevention from string validation alone. Cloudflare Workers' network/runtime boundary provides defense in depth, while the application independently rejects literal private targets and suspicious hostname classes.
+Application-level hostname validation cannot prove that a public hostname will always resolve to a public address. Auvrora therefore does **not** claim complete DNS-rebinding prevention from string validation alone. Cloudflare Workers' network/runtime boundary provides defense in depth, while the application independently rejects literal private targets and suspicious hostname classes.
 
-LoopFix never accepts target credentials, arbitrary request headers, cookies, request bodies, or a user-selected verification URL.
+Auvrora never accepts target credentials, arbitrary request headers, cookies, request bodies, or a user-selected verification URL.
 
 ## Retrieval limits
 
@@ -25,7 +25,7 @@ LoopFix never accepts target credentials, arbitrary request headers, cookies, re
 - fetched HTML body: 2 MiB maximum;
 - accepted content types: `text/html` and `application/xhtml+xml`.
 
-The fetcher does not execute target JavaScript. It requests HTML with a transparent LoopFix user agent and does not forward browser authentication state.
+The fetcher does not execute target JavaScript. It requests HTML with a transparent Auvrora user agent and does not forward browser authentication state.
 
 ## Untrusted page content
 
@@ -37,7 +37,7 @@ No WebMCP tool uses `exposedTo`; the project relies on the default same-origin `
 
 ## Human control
 
-`set_fix_scope` changes only ephemeral visible browser state. LoopFix does not write code, modify a website, deploy changes, authenticate to third-party accounts, or execute generated instructions. The human decides what is actually implemented outside LoopFix.
+`set_fix_scope` changes only ephemeral visible browser state. Auvrora does not write code, modify a website, deploy changes, authenticate to third-party accounts, or execute generated instructions. The human decides what is actually implemented outside Auvrora.
 
 ## Browser response headers
 
@@ -47,7 +47,7 @@ The CSP is intentionally narrow and will only be adjusted if production browser 
 
 ## Rate limiting and privacy
 
-The production Worker uses Cloudflare's Rate Limiting binding at a target of 10 audit starts per minute per derived non-raw key. The raw `CF-Connecting-IP` value is not used as the limiter key; LoopFix hashes the endpoint name, UTC day, and address before calling the binding.
+The production Worker uses Cloudflare's Rate Limiting binding at a target of 10 audit starts per minute per derived non-raw key. The raw `CF-Connecting-IP` value is not used as the limiter key; Auvrora hashes the endpoint name, UTC day, and address before calling the binding.
 
 This transformation reduces propagation of the raw address into the limiter key, but it is **not cryptographic anonymization**: IP addresses have a small enough search space that a deterministic hash can potentially be guessed. The key is used only as coarse abuse control; application code does not persist or log the raw address or derived key.
 
@@ -55,4 +55,4 @@ This limiter is not identity, billing, or exact accounting. Shared public IP add
 
 ## Data retention
 
-LoopFix has no database. Audit state and selected scope live only in the active browser session. The application does not intentionally retain fetched HTML or submitted URLs. Cloudflare/platform operational logs remain subject to the hosting account's platform configuration.
+Auvrora has no database. Audit state and selected scope live only in the active browser session. The application does not intentionally retain fetched HTML or submitted URLs. Cloudflare/platform operational logs remain subject to the hosting account's platform configuration.

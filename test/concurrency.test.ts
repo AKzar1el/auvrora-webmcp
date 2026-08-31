@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createLoopFixController } from "../src/lib/app/controller.ts";
+import { createAuvroraController } from "../src/lib/app/controller.ts";
 import type { AuditRun, Finding } from "../src/lib/audit/types.ts";
 
 function deferred<T>() {
@@ -39,7 +39,7 @@ describe("controller async state safety", () => {
   it("does not let an older audit response replace a newer requested audit", async () => {
     const first = deferred<AuditRun>();
     const second = deferred<AuditRun>();
-    const controller = createLoopFixController({
+    const controller = createAuvroraController({
       auditClient: (url) => url.endsWith("/first") ? first.promise : second.promise,
     });
 
@@ -58,7 +58,7 @@ describe("controller async state safety", () => {
   it("does not attach stale verification to a different active audit with the same finding IDs", async () => {
     const verificationFetch = deferred<AuditRun>();
     let call = 0;
-    const controller = createLoopFixController({
+    const controller = createAuvroraController({
       auditClient: async () => {
         call += 1;
         if (call === 1) return run("https://example.org/first");
@@ -84,7 +84,7 @@ describe("controller async state safety", () => {
     const verificationFetch = deferred<AuditRun>();
     const replacementFetch = deferred<AuditRun>();
     let call = 0;
-    const controller = createLoopFixController({
+    const controller = createAuvroraController({
       auditClient: async () => {
         call += 1;
         if (call === 1) return run("https://example.org/first");

@@ -38,7 +38,7 @@ describe("fetchPublicPage", () => {
     expect(calls.length).toBe(1);
     expect(calls[0].init?.redirect).toBe("manual");
     expect(new Headers(calls[0].init?.headers).get("accept")).toContain("text/html");
-    expect(new Headers(calls[0].init?.headers).get("user-agent")).toContain("LoopFix-WebMCP/1.0");
+    expect(new Headers(calls[0].init?.headers).get("user-agent")).toContain("Auvrora-WebMCP/1.0");
   });
 
   it("follows a relative redirect and revalidates the destination", async () => {

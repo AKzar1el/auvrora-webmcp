@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, expect, it } from "vitest";
 import type { AuditRun, Finding } from "../src/lib/audit/types.ts";
-import { createLoopFixController } from "../src/lib/app/controller.ts";
+import { createAuvroraController } from "../src/lib/app/controller.ts";
 import { createAuditClient } from "../src/lib/app/audit-client.ts";
 import { demoBefore } from "../src/demo/before.ts";
 
@@ -60,12 +60,12 @@ describe("audit client", () => {
   });
 });
 
-describe("LoopFix controller", () => {
+describe("Auvrora controller", () => {
   it("runAudit forwards signal and commits only after success", async () => {
     const signalController = new AbortController();
     let observedSignal: AbortSignal | undefined;
     const next = run(["finding:missing_title", "finding:missing_h1"]);
-    const controller = createLoopFixController({
+    const controller = createAuvroraController({
       auditClient: async (_url, signal) => { observedSignal = signal; return next; },
     });
     const result = await controller.runAudit("https://example.org/", signalController.signal);
@@ -77,7 +77,7 @@ describe("LoopFix controller", () => {
 
   it("failed new audit leaves previous successful state intact", async () => {
     let calls = 0;
-    const controller = createLoopFixController({
+    const controller = createAuvroraController({
       auditClient: async () => {
         calls += 1;
         if (calls === 1) return run();
@@ -91,7 +91,7 @@ describe("LoopFix controller", () => {
   });
 
   it("loadDemo replaces prior live state", async () => {
-    const controller = createLoopFixController({ auditClient: async () => run() });
+    const controller = createAuvroraController({ auditClient: async () => run() });
     await controller.runAudit("https://example.org/");
     controller.setFixScope(["finding:missing_title"]);
     controller.loadDemo();
@@ -104,20 +104,20 @@ describe("LoopFix controller", () => {
     const ids = Array.from({ length: 12 }, (_, index) => `finding:rule_${index}`);
     const custom = run(ids);
     custom.findings = ids.map((id, index) => finding(id, index % 2 ? "warning" : "error"));
-    const controller = createLoopFixController({ demoBeforeRun: custom });
+    const controller = createAuvroraController({ demoBeforeRun: custom });
     controller.loadDemo();
     expect(controller.listFindings().length).toBe(10);
     expect(controller.listFindings({ severity: "warning", limit: 3 }).map((item) => item.severity)).toEqual(["warning", "warning", "warning"]);
   });
 
   it("inspection rejects unknown finding IDs", () => {
-    const controller = createLoopFixController();
+    const controller = createAuvroraController();
     controller.loadDemo();
     assert.throws(() => controller.inspectFinding("finding:not_here"), /not found/i);
   });
 
   it("lets the human workflow clear the visible scope without exposing an empty WebMCP scope", () => {
-    const controller = createLoopFixController();
+    const controller = createAuvroraController();
     controller.loadDemo();
     controller.setFixScope(["finding:missing_title"]);
     controller.clearFixScope();
@@ -125,7 +125,7 @@ describe("LoopFix controller", () => {
   });
 
   it("demo verification uses the deterministic after fixture", async () => {
-    const controller = createLoopFixController();
+    const controller = createAuvroraController();
     controller.loadDemo();
     controller.setFixScope(["finding:missing_title", "finding:images_missing_alt"]);
     expect(await controller.verifyFixScope()).toEqual([
@@ -138,7 +138,7 @@ describe("LoopFix controller", () => {
     const first = run(["finding:missing_title"]);
     const second = { ...run([]), requestedUrl: first.canonicalUrl, canonicalUrl: first.canonicalUrl };
     const calls: Array<{ url: string; signal?: AbortSignal }> = [];
-    const controller = createLoopFixController({
+    const controller = createAuvroraController({
       auditClient: async (url, signal) => {
         calls.push({ url, signal });
         return calls.length === 1 ? first : second;

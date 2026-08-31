@@ -1,9 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import type { LoopFixController } from "../src/lib/app/controller.ts";
-import { LOOPFIX_TOOL_SCHEMAS } from "../src/lib/webmcp/schemas.ts";
-import { createLoopFixTools } from "../src/lib/webmcp/tools.ts";
+import type { AuvroraController } from "../src/lib/app/controller.ts";
+import { AUVRORA_TOOL_SCHEMAS } from "../src/lib/webmcp/schemas.ts";
+import { createAuvroraTools } from "../src/lib/webmcp/tools.ts";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const TOOLS_PATH = resolve(ROOT, "evals/tools.json");
@@ -46,7 +46,7 @@ function flattenCalls(nodes: EvalCall[]): EvalCall[] {
   });
 }
 
-function inertController(): LoopFixController {
+function inertController(): AuvroraController {
   return {
     runAudit: async () => { throw new Error("not used by eval snapshot test"); },
     loadDemo: () => { throw new Error("not used by eval snapshot test"); },
@@ -68,7 +68,7 @@ describe("WebMCP eval artifacts", () => {
     const snapshot = readJson(TOOLS_PATH) as { tools?: Array<Record<string, unknown>> };
     expect(Array.isArray(snapshot.tools)).toBe(true);
 
-    const production = createLoopFixTools(inertController())
+    const production = createAuvroraTools(inertController())
       .map((tool) => ({
         name: tool.name,
         description: tool.description,
@@ -83,7 +83,7 @@ describe("WebMCP eval artifacts", () => {
     expect(serialized).toEqual(production);
     expect(production.map((tool) => tool.name)).toEqual([...TOOL_NAMES].sort());
     for (const tool of production) {
-      expect(tool.inputSchema).toEqual(LOOPFIX_TOOL_SCHEMAS[tool.name as ToolName]);
+      expect(tool.inputSchema).toEqual(AUVRORA_TOOL_SCHEMAS[tool.name as ToolName]);
     }
   });
 
@@ -101,7 +101,7 @@ describe("WebMCP eval artifacts", () => {
     expect(evals.some((entry) => (entry.expectedCall?.length ?? 0) >= 4), "suite needs a multi-step journey").toBe(true);
   });
 
-  it("uses only current LoopFix tools and valid user-message / expectedCall shapes", () => {
+  it("uses only current Auvrora tools and valid user-message / expectedCall shapes", () => {
     const evals = readJson(EVALS_PATH) as EvalCase[];
     const allowed = new Set<string>(TOOL_NAMES);
 

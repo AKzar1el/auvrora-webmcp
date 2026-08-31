@@ -1,4 +1,4 @@
-export const LOOPFIX_TOOL_SCHEMAS = Object.freeze({
+export const AUVRORA_TOOL_SCHEMAS = Object.freeze({
   run_audit: {
     type: "object",
     additionalProperties: false,

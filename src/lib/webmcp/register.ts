@@ -1,7 +1,7 @@
-import type { LoopFixController } from "../app/controller.ts";
-import { createLoopFixTools } from "./tools.ts";
+import type { AuvroraController } from "../app/controller.ts";
+import { createAuvroraTools } from "./tools.ts";
 
-export async function registerLoopFixTools(controller: LoopFixController): Promise<{
+export async function registerAuvroraTools(controller: AuvroraController): Promise<{
   supported: boolean;
   count: number;
   dispose: () => void;
@@ -11,7 +11,7 @@ export async function registerLoopFixTools(controller: LoopFixController): Promi
   }
 
   const registrationController = new AbortController();
-  const tools = createLoopFixTools(controller);
+  const tools = createAuvroraTools(controller);
   try {
     for (const tool of tools) {
       await document.modelContext.registerTool(tool as WebMCP.ModelContextTool, {

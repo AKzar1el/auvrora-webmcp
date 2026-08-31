@@ -2,22 +2,22 @@ import { demoAfter } from "../../demo/after.ts";
 import { demoBefore } from "../../demo/before.ts";
 import type { AuditRun, Finding, Severity } from "../audit/types.ts";
 import { createAuditClient } from "./audit-client.ts";
-import { createLoopFixStore, type LoopFixState } from "./state.ts";
+import { createAuvroraStore, type AuvroraState } from "./state.ts";
 import { compareSelectedFindings, type VerificationResult } from "./verification.ts";
 
-export type LoopFixController = {
+export type AuvroraController = {
   runAudit(url: string, signal?: AbortSignal): Promise<AuditRun>;
   loadDemo(): AuditRun;
   listFindings(input?: { severity?: Severity; limit?: number }): Finding[];
   inspectFinding(findingId: string): Finding;
   setFixScope(findingIds: string[]): void;
   verifyFixScope(signal?: AbortSignal): Promise<VerificationResult[]>;
-  getState(): LoopFixState;
+  getState(): AuvroraState;
 };
 
-export type LoopFixUiController = LoopFixController & {
+export type AuvroraUiController = AuvroraController & {
   clearFixScope(): void;
-  subscribe(subscriber: (state: LoopFixState) => void): () => void;
+  subscribe(subscriber: (state: AuvroraState) => void): () => void;
 };
 
 type AuditClient = (url: string, signal?: AbortSignal) => Promise<AuditRun>;
@@ -28,8 +28,8 @@ type ControllerOptions = {
   demoAfterRun?: AuditRun;
 };
 
-export function createLoopFixController(options: ControllerOptions = {}): LoopFixUiController {
-  const store = createLoopFixStore();
+export function createAuvroraController(options: ControllerOptions = {}): AuvroraUiController {
+  const store = createAuvroraStore();
   const auditClient = options.auditClient ?? createAuditClient();
   const beforeDemo = options.demoBeforeRun ?? demoBefore;
   const afterDemo = options.demoAfterRun ?? demoAfter;

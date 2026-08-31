@@ -19,7 +19,7 @@ const CLEAN_HTML = `<!doctype html>
 <html lang="en">
   <head>
     <title>A sufficiently descriptive page title for testing</title>
-    <meta name="description" content="A sufficiently detailed description that passes the LoopFix heuristic without claiming to be a search-engine requirement.">
+    <meta name="description" content="A sufficiently detailed description that passes the Auvrora heuristic without claiming to be a search-engine requirement.">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="canonical" href="https://example.org/">
   </head>

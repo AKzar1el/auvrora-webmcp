@@ -9,7 +9,7 @@ function findings(extraMeta: string) {
     fetchedAt: "2026-08-29T00:00:00.000Z",
     html: `<!doctype html><html lang="en"><head>
       <title>A descriptive example page title for robots testing</title>
-      <meta name="description" content="A sufficiently detailed description for a deterministic LoopFix robots directive regression test without unrelated findings.">
+      <meta name="description" content="A sufficiently detailed description for a deterministic Auvrora robots directive regression test without unrelated findings.">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <link rel="canonical" href="https://example.org/">
       ${extraMeta}

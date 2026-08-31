@@ -1,6 +1,6 @@
-# LoopFix WebMCP architecture
+# Auvrora WebMCP architecture
 
-LoopFix is a deliberately small WebMCP application. The browser contains one ephemeral state model for the current audit, selected finding IDs, and verification results. Human controls and WebMCP tools both call the same `LoopFixController`; there is no parallel agent-only implementation.
+Auvrora is a deliberately small WebMCP application. The browser contains one ephemeral state model for the current audit, selected finding IDs, and verification results. Human controls and WebMCP tools both call the same `AuvroraController`; there is no parallel agent-only implementation.
 
 ## Data flow
 
@@ -25,7 +25,7 @@ sequenceDiagram
 
 ## Browser boundary
 
-`src/lib/app/state.ts` owns immutable session snapshots. `src/lib/app/controller.ts` is the sole application mutation surface. `src/scripts/loopfix-client.ts` renders state with DOM APIs and `textContent`; fetched page strings are never inserted with active HTML parsing.
+`src/lib/app/state.ts` owns immutable session snapshots. `src/lib/app/controller.ts` is the sole application mutation surface. `src/scripts/auvrora-client.ts` renders state with DOM APIs and `textContent`; fetched page strings are never inserted with active HTML parsing.
 
 The WebMCP surface is implemented with native `document.modelContext.registerTool(...)`. Tool input is constrained by JSON Schema and validated again in JavaScript before controller calls. Registration uses one `AbortController` for lifecycle cleanup, and tool execution forwards WebMCP cancellation signals to network work.
 

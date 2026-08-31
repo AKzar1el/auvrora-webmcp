@@ -2,7 +2,7 @@
   "tools": [
     {
       "name": "run_audit",
-      "description": "Run LoopFix's bounded deterministic audit for one public HTTP or HTTPS page and make it the active visible audit.",
+      "description": "Run Auvrora's bounded deterministic audit for one public HTTP or HTTPS page and make it the active visible audit.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
@@ -18,7 +18,7 @@
     },
     {
       "name": "list_findings",
-      "description": "List compact findings from the active LoopFix audit, optionally filtered by severity. Returns at most the requested limit and may truncate for output safety.",
+      "description": "List compact findings from the active Auvrora audit, optionally filtered by severity. Returns at most the requested limit and may truncate for output safety.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
@@ -56,7 +56,7 @@
     },
     {
       "name": "set_fix_scope",
-      "description": "Set the visible LoopFix fix scope to one through ten finding IDs from the active audit. This changes only local application state.",
+      "description": "Set the visible Auvrora fix scope to one through ten finding IDs from the active audit. This changes only local application state.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,

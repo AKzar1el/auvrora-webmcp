@@ -1,10 +1,10 @@
 import type { AuditRun, Finding } from "../audit/types.ts";
 import type { VerificationResult } from "./verification.ts";
 
-export type LoopFixMode = "live" | "demo";
+export type AuvroraMode = "live" | "demo";
 
-export type LoopFixState = {
-  mode: LoopFixMode;
+export type AuvroraState = {
+  mode: AuvroraMode;
   audit: AuditRun | null;
   selectedFindingIds: readonly string[];
   verification: {
@@ -13,7 +13,7 @@ export type LoopFixState = {
   } | null;
 };
 
-type Subscriber = (state: LoopFixState) => void;
+type Subscriber = (state: AuvroraState) => void;
 
 function freezeFinding(finding: Finding): Finding {
   return Object.freeze({ ...finding });
@@ -27,11 +27,11 @@ function freezeAudit(audit: AuditRun): AuditRun {
 }
 
 function makeState(
-  mode: LoopFixMode,
+  mode: AuvroraMode,
   audit: AuditRun | null,
   selectedFindingIds: readonly string[],
-  verification: LoopFixState["verification"],
-): LoopFixState {
+  verification: AuvroraState["verification"],
+): AuvroraState {
   const frozenVerification = verification
     ? Object.freeze({
         audit: freezeAudit(verification.audit),
@@ -47,7 +47,7 @@ function makeState(
   });
 }
 
-export function createLoopFixStore() {
+export function createAuvroraStore() {
   let state = makeState("live", null, [], null);
   const subscribers = new Set<Subscriber>();
 
@@ -55,13 +55,13 @@ export function createLoopFixStore() {
     for (const subscriber of subscribers) subscriber(state);
   };
 
-  const replace = (next: LoopFixState) => {
+  const replace = (next: AuvroraState) => {
     state = next;
     emit();
   };
 
   return {
-    getState(): LoopFixState {
+    getState(): AuvroraState {
       return state;
     },
 
@@ -70,7 +70,7 @@ export function createLoopFixStore() {
       return () => subscribers.delete(subscriber);
     },
 
-    replaceAudit(audit: AuditRun, mode: LoopFixMode): void {
+    replaceAudit(audit: AuditRun, mode: AuvroraMode): void {
       replace(makeState(mode, audit, [], null));
     },
 

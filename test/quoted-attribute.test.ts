@@ -9,7 +9,7 @@ function audit(body: string) {
     fetchedAt: "2026-08-29T00:00:00.000Z",
     html: `<!doctype html><html lang="en"><head>
       <title>A descriptive example page title for testing</title>
-      <meta name="description" content="A > B, and this description deliberately contains enough useful text to remain inside the LoopFix heuristic range for this parser regression.">
+      <meta name="description" content="A > B, and this description deliberately contains enough useful text to remain inside the Auvrora heuristic range for this parser regression.">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <link rel="canonical" href="https://example.org/">
     </head><body><h1>Example</h1>${body}</body></html>`,

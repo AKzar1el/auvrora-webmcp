@@ -93,7 +93,7 @@ async function digestHex(value: string): Promise<string> {
 async function deriveRateLimitKey(request: Request, now: () => Date): Promise<string> {
   const ip = request.headers.get("cf-connecting-ip")?.trim() || "local";
   const day = now().toISOString().slice(0, 10);
-  return digestHex(`loopfix-audit|${day}|${ip}`);
+  return digestHex(`auvrora-audit|${day}|${ip}`);
 }
 
 export async function handleAuditRequest(request: Request, runtime: AuditRuntime = {}): Promise<Response> {

@@ -101,7 +101,7 @@ async function requestPage(url: URL, fetchImpl: typeof fetch, parentSignal?: Abo
       redirect: "manual",
       headers: {
         accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.1",
-        "user-agent": "LoopFix-WebMCP/1.0 (+https://github.com/AKzar1el/loopfix-mcp)",
+        "user-agent": "Auvrora-WebMCP/1.0 (+https://github.com/AKzar1el/auvrora-webmcp)",
       },
       signal: controller.signal,
     });

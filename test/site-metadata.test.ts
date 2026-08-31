@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
-describe("LoopFix page metadata", () => {
+describe("Auvrora page metadata", () => {
   it("keeps the page title within its own documented heuristic", async () => {
     const source = await readFile(new URL("../src/pages/index.astro", import.meta.url), "utf8");
     const title = /<title>([^<]+)<\/title>/.exec(source)?.[1]?.trim() ?? "";

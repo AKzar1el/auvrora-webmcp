@@ -1,18 +1,18 @@
-# LoopFix WebMCP Architecture Design
+# Auvrora WebMCP Architecture Design
 
 ## Context
 
-`AKzar1el/loopfix-mcp` is a new public repository for the OpenAI WebMCP Challenge. The repository is intentionally separate from the private `digestseo-site` application so the challenge submission can be fully inspectable and open source without exposing the commercial codebase.
+`AKzar1el/auvrora-webmcp` is a new public repository for the OpenAI WebMCP Challenge. The repository is intentionally separate from the private `digestseo-site` application so the challenge submission can be fully inspectable and open source without exposing the commercial codebase.
 
-The product name is **LoopFix WebMCP**. The existing repository name `loopfix-mcp` is retained for now; the README, package metadata, UI, and submission copy will consistently use `LoopFix WebMCP` so the browser-facing technology is unambiguous.
+The product name is **Auvrora WebMCP**. The existing repository name `auvrora-webmcp` is retained for now; the README, package metadata, UI, and submission copy will consistently use `Auvrora WebMCP` so the browser-facing technology is unambiguous.
 
 The implementation is a small standalone Astro application deployed on Cloudflare Workers. It provides a deterministic single-page technical SEO audit and a visible human-agent remediation loop through the native WebMCP imperative API.
 
 Primary flow:
 
-`Audit -> Inspect -> Select scope -> Implement outside LoopFix -> Re-audit -> Verify`
+`Audit -> Inspect -> Select scope -> Implement outside Auvrora -> Re-audit -> Verify`
 
-The human remains in control of what is selected and implemented. LoopFix does not modify websites, repositories, deployments, credentials, or third-party systems.
+The human remains in control of what is selected and implemented. Auvrora does not modify websites, repositories, deployments, credentials, or third-party systems.
 
 ## External Standards and Guidance
 
@@ -89,7 +89,7 @@ A dev-only WebMCP type package may be used if it matches current Chrome guidance
 
 ## Product State Model
 
-LoopFix keeps all workflow state in the active browser session. Refreshing the page resets the session.
+Auvrora keeps all workflow state in the active browser session. Refreshing the page resets the session.
 
 ```ts
 type Severity = "error" | "warning" | "notice";
@@ -120,7 +120,7 @@ type VerificationResult = {
   status: VerificationStatus;
 };
 
-type LoopFixState = {
+type AuvroraState = {
   mode: "live" | "demo";
   audit: AuditRun | null;
   selectedFindingIds: string[];
@@ -375,7 +375,7 @@ Supported error codes include `invalid_request`, `invalid_url`, `private_url`, `
 - Fetch timeout: 12 seconds total per network request.
 - HTML response body <= 2 MiB.
 - `text/html` and `application/xhtml+xml` accepted.
-- Fetch sends a transparent `LoopFix-WebMCP/1.0` user agent identifying the project URL.
+- Fetch sends a transparent `Auvrora-WebMCP/1.0` user agent identifying the project URL.
 - No cookies, authorization headers, referrer, or user-provided headers are forwarded.
 
 ### SSRF boundary
@@ -412,7 +412,7 @@ The challenge app intentionally uses a small, explainable set of rules that can 
 12. `images_missing_alt` — at least one `<img>` lacks an `alt` attribute; evidence reports only the count, not arbitrary full markup.
 13. `noindex_detected` — robots meta includes `noindex`.
 
-Rules are deliberately deterministic and do not claim to measure every SEO quality factor. Thresholds are documented as LoopFix audit heuristics rather than search-engine requirements.
+Rules are deliberately deterministic and do not claim to measure every SEO quality factor. Thresholds are documented as Auvrora audit heuristics rather than search-engine requirements.
 
 ### HTML inspection approach
 
@@ -449,7 +449,7 @@ The fixture data must not contain hidden instructions, marketing claims, fabrica
 
 One responsive page:
 
-1. Header: LoopFix WebMCP identity, one-sentence purpose, GitHub link.
+1. Header: Auvrora WebMCP identity, one-sentence purpose, GitHub link.
 2. Audit form: URL input, `Run audit`, and secondary `Try demo` action.
 3. WebMCP status: supported/unsupported and number of registered tools.
 4. Findings panel: counts and deterministic finding rows.
@@ -521,7 +521,7 @@ A `429` response returns a clear retry message. The limiter is not used for bill
 ## Repository Structure
 
 ```text
-loopfix-mcp/
+auvrora-webmcp/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml

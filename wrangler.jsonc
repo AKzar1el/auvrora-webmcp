@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "loopfix-webmcp",
+  "name": "auvrora-webmcp",
   "main": "@astrojs/cloudflare/entrypoints/server",
   "compatibility_date": "2026-08-28",
   "compatibility_flags": [

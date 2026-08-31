@@ -1,6 +1,6 @@
 # WebMCP agent evaluations
 
-LoopFix ships a small evaluation dataset for the agent-facing WebMCP contract in `evals/`.
+Auvrora ships a small evaluation dataset for the agent-facing WebMCP contract in `evals/`.
 
 The goal is deliberately narrower than benchmarking a language model: detect regressions in tool naming, schema drift, tool-selection clarity, ordering, and the human-agent remediation journey without changing the production runtime.
 
@@ -9,7 +9,7 @@ The dataset follows Chrome's current WebMCP evaluation guidance and the JSON for
 ## Files
 
 - `evals/tools.json` — static snapshot of the five public WebMCP tool names, descriptions, and input schemas for schema-only model evals.
-- `evals/webmcp-evals.json` — ten natural-language cases covering direct requests, ambiguous intent, multi-step journeys, recovery from missing state, and a request that should not invoke any LoopFix tool.
+- `evals/webmcp-evals.json` — ten natural-language cases covering direct requests, ambiguous intent, multi-step journeys, recovery from missing state, and a request that should not invoke any Auvrora tool.
 - `test/webmcp-evals.test.ts` — deterministic guards that keep the snapshot aligned with production, validate suite structure, and reject internally inconsistent mocked tool results.
 
 The static tool snapshot is intentionally duplicated for compatibility with external eval tooling. CI compares it with the production tool definitions so the copy cannot silently drift.
@@ -29,7 +29,7 @@ The ten cases exercise these behaviors:
 9. recovery when verification is requested from an empty browser state;
 10. refusal to invent an unsupported website-edit/deploy capability.
 
-The example target is `https://example.com/`, a stable public documentation domain. The evals use LoopFix's deterministic finding IDs where a concrete ID is needed.
+The example target is `https://example.com/`, a stable public documentation domain. The evals use Auvrora's deterministic finding IDs where a concrete ID is needed.
 
 ## Deterministic repository gate
 
@@ -39,7 +39,7 @@ The eval guard verifies that:
 
 - the static tool snapshot exactly matches the production WebMCP names, descriptions, and input schemas;
 - exactly ten categorized eval cases remain present;
-- all expected calls reference current LoopFix tools;
+- all expected calls reference current Auvrora tools;
 - the refusal case remains a genuine no-tool expectation;
 - at least one multi-step journey remains covered; and
 - mocked `list_findings` results are internally coherent.
@@ -50,7 +50,7 @@ GoogleChromeLabs `webmcp-evals` includes a `smoke` mode that executes authored r
 
 The committed suite also contains one `expectedCall: null` refusal case. That case is intentionally for probabilistic model-selection evaluation: the upstream smoke command requires at least one required tool call, so a no-tool case must be excluded from deterministic smoke rather than converted into a fake call.
 
-LoopFix's production abuse boundary allows 10 audit starts per minute per derived key. The nine executable cases together initiate more than ten audits because `verify_fix_scope` performs a fresh audit. Do not disable or loosen that production control for testing; split smoke execution across limiter windows instead.
+Auvrora's production abuse boundary allows 10 audit starts per minute per derived key. The nine executable cases together initiate more than ten audits because `verify_fix_scope` performs a fresh audit. Do not disable or loosen that production control for testing; split smoke execution across limiter windows instead.
 
 Using the GoogleChromeLabs repository at the reviewed commit `97e6fbe83fc3f2e3c6df2198b962dd2ad59cb924`:
 
@@ -63,21 +63,21 @@ npm ci
 npm run build
 
 jq '[.[] | select(.expectedCall != null)]' \
-  /absolute/path/to/loopfix-mcp/evals/webmcp-evals.json \
-  > /tmp/loopfix-smoke.json
-jq '.[0:5]' /tmp/loopfix-smoke.json > /tmp/loopfix-smoke-a.json
-jq '.[5:9]' /tmp/loopfix-smoke.json > /tmp/loopfix-smoke-b.json
+  /absolute/path/to/auvrora-webmcp/evals/webmcp-evals.json \
+  > /tmp/auvrora-smoke.json
+jq '.[0:5]' /tmp/auvrora-smoke.json > /tmp/auvrora-smoke-a.json
+jq '.[5:9]' /tmp/auvrora-smoke.json > /tmp/auvrora-smoke-b.json
 
 node dist/bin/webmcp-evals.js --chrome-channel chrome smoke \
-  -u https://loopfix-webmcp.tomi-seregi99.workers.dev \
-  -e /tmp/loopfix-smoke-a.json \
+  -u https://auvrora-webmcp.tomi-seregi99.workers.dev \
+  -e /tmp/auvrora-smoke-a.json \
   -v
 
 sleep 65
 
 node dist/bin/webmcp-evals.js --chrome-channel chrome smoke \
-  -u https://loopfix-webmcp.tomi-seregi99.workers.dev \
-  -e /tmp/loopfix-smoke-b.json \
+  -u https://auvrora-webmcp.tomi-seregi99.workers.dev \
+  -e /tmp/auvrora-smoke-b.json \
   -v
 ```
 
@@ -88,9 +88,9 @@ On **August 29, 2026**, the pinned upstream CLI executed the nine callable cases
 - batch A: **12/12** steps across five cases;
 - batch B: **17/17** steps across four cases.
 
-The run exercised all five LoopFix WebMCP tools, including both one-finding and two-finding verification journeys and the recovery-from-empty-state journey. The no-tool refusal case is not included in this count because deterministic smoke cannot evaluate an intentional absence of tool calls.
+The run exercised all five Auvrora WebMCP tools, including both one-finding and two-finding verification journeys and the recovery-from-empty-state journey. The no-tool refusal case is not included in this count because deterministic smoke cannot evaluate an intentional absence of tool calls.
 
-`webmcp-evals` is experimental upstream tooling and is executed from a pinned checkout in a disposable verification environment. LoopFix does not add it to its application dependency graph.
+`webmcp-evals` is experimental upstream tooling and is executed from a pinned checkout in a disposable verification environment. Auvrora does not add it to its application dependency graph.
 
 ## Probabilistic model evals
 
@@ -100,8 +100,8 @@ Schema-only selection eval:
 
 ```bash
 node dist/bin/webmcp-evals.js local \
-  -t /absolute/path/to/loopfix-mcp/evals/tools.json \
-  -e /absolute/path/to/loopfix-mcp/evals/webmcp-evals.json \
+  -t /absolute/path/to/auvrora-webmcp/evals/tools.json \
+  -e /absolute/path/to/auvrora-webmcp/evals/webmcp-evals.json \
   --backend <backend> \
   --model <model> \
   --runs 5 \
@@ -112,8 +112,8 @@ Live browser journey eval:
 
 ```bash
 node dist/bin/webmcp-evals.js --chrome-channel chrome browser \
-  -u https://loopfix-webmcp.tomi-seregi99.workers.dev \
-  -e /absolute/path/to/loopfix-mcp/evals/webmcp-evals.json \
+  -u https://auvrora-webmcp.tomi-seregi99.workers.dev \
+  -e /absolute/path/to/auvrora-webmcp/evals/webmcp-evals.json \
   --backend <backend> \
   --model <model> \
   --runs 5 \
@@ -136,4 +136,4 @@ A model failure is evidence to inspect, not a reason to add model-specific promp
 
 Changes to the production tool contract should be justified by repeated failures across realistic cases, then covered by the existing deterministic WebMCP contract tests.
 
-LoopFix does not publish a model-selection pass rate until an actual model/backend/runs configuration has been executed and recorded. The committed suite is the reproducible evaluation input, not a fabricated benchmark result.
+Auvrora does not publish a model-selection pass rate until an actual model/backend/runs configuration has been executed and recorded. The committed suite is the reproducible evaluation input, not a fabricated benchmark result.

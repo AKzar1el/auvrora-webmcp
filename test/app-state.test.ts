@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, expect, it } from "vitest";
 import type { AuditRun, Finding } from "../src/lib/audit/types.ts";
-import { createLoopFixStore } from "../src/lib/app/state.ts";
+import { createAuvroraStore } from "../src/lib/app/state.ts";
 
 function finding(id: string): Finding {
   const code = id.replace(/^finding:/, "");
@@ -27,9 +27,9 @@ function run(ids = ["finding:missing_title", "finding:missing_h1"]): AuditRun {
   };
 }
 
-describe("createLoopFixStore", () => {
+describe("createAuvroraStore", () => {
   it("replaceAudit updates mode and clears stale scope and verification", () => {
-    const store = createLoopFixStore();
+    const store = createAuvroraStore();
     const first = run();
     store.replaceAudit(first, "live");
     store.setScope(["finding:missing_title"]);
@@ -47,14 +47,14 @@ describe("createLoopFixStore", () => {
 
   it("setScope accepts one to ten unique current finding IDs", () => {
     const ids = Array.from({ length: 10 }, (_, index) => `finding:rule_${index}`);
-    const store = createLoopFixStore();
+    const store = createAuvroraStore();
     store.replaceAudit(run(ids), "live");
     store.setScope(ids);
     expect(store.getState().selectedFindingIds).toEqual(ids);
   });
 
   it("rejects empty, duplicate, oversized, and unknown scopes without partial mutation", () => {
-    const store = createLoopFixStore();
+    const store = createAuvroraStore();
     store.replaceAudit(run(), "live");
     store.setScope(["finding:missing_title"]);
     const before = store.getState();
@@ -71,7 +71,7 @@ describe("createLoopFixStore", () => {
   });
 
   it("clearScope removes the last human selection without clearing the audit", () => {
-    const store = createLoopFixStore();
+    const store = createAuvroraStore();
     store.replaceAudit(run(), "live");
     store.setScope(["finding:missing_title"]);
     store.clearScope();
@@ -81,13 +81,13 @@ describe("createLoopFixStore", () => {
   });
 
   it("requires an active scope before storing verification", () => {
-    const store = createLoopFixStore();
+    const store = createAuvroraStore();
     store.replaceAudit(run(), "live");
     assert.throws(() => store.setVerification(run([]), []), /scope/i);
   });
 
   it("notifies subscribers with immutable snapshots once per mutation", () => {
-    const store = createLoopFixStore();
+    const store = createAuvroraStore();
     const snapshots: ReturnType<typeof store.getState>[] = [];
     const unsubscribe = store.subscribe((snapshot) => snapshots.push(snapshot));
 

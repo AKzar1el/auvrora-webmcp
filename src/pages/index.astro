@@ -13,25 +13,25 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.url.origin);
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#111214" />
-    <title>LoopFix WebMCP — Human-Agent SEO Audit Loop</title>
+    <title>Auvrora WebMCP — Human-Agent SEO Audit Loop</title>
     <meta name="description" content="A human-agent WebMCP workflow for deterministic technical SEO auditing and fix verification." />
     <link rel="canonical" href={canonicalUrl} />
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="/" aria-label="LoopFix WebMCP home">
+      <a class="brand" href="/" aria-label="Auvrora WebMCP home">
         <span class="brand-mark" aria-hidden="true">LF</span>
-        <span>LoopFix <strong>WebMCP</strong></span>
+        <span>Auvrora <strong>WebMCP</strong></span>
       </a>
-      <a class="header-link" href="https://github.com/AKzar1el/loopfix-mcp" rel="noreferrer">GitHub ↗</a>
+      <a class="header-link" href="https://github.com/AKzar1el/auvrora-webmcp" rel="noreferrer">GitHub ↗</a>
     </header>
 
     <main id="app">
       <section class="hero" aria-labelledby="hero-title">
         <p class="eyebrow">Human + agent remediation loop</p>
         <h1 id="hero-title">Audit. Scope. Fix. Verify.</h1>
-        <p class="hero-copy">LoopFix exposes deterministic SEO audit work as native WebMCP tools while keeping every state change visible to the person in the browser.</p>
-        <div class="flow" aria-label="LoopFix workflow">
+        <p class="hero-copy">Auvrora exposes deterministic SEO audit work as native WebMCP tools while keeping every state change visible to the person in the browser.</p>
+        <div class="flow" aria-label="Auvrora workflow">
           <span>Audit</span><span aria-hidden="true">→</span><span>Inspect</span><span aria-hidden="true">→</span><span>Scope</span><span aria-hidden="true">→</span><span>Verify</span>
         </div>
       </section>
@@ -60,8 +60,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.url.origin);
     </footer>
 
     <script>
-      import { initializeLoopFixApp } from "../scripts/loopfix-client.ts";
-      initializeLoopFixApp();
+      import { initializeAuvroraApp } from "../scripts/auvrora-client.ts";
+      initializeAuvroraApp();
     </script>
   </body>
 </html>

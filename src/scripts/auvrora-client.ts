@@ -1,7 +1,7 @@
-import { createLoopFixController } from "../lib/app/controller.ts";
-import type { LoopFixState } from "../lib/app/state.ts";
+import { createAuvroraController } from "../lib/app/controller.ts";
+import type { AuvroraState } from "../lib/app/state.ts";
 import type { Finding } from "../lib/audit/types.ts";
-import { registerLoopFixTools } from "../lib/webmcp/register.ts";
+import { registerAuvroraTools } from "../lib/webmcp/register.ts";
 
 function appendElements(parent: Node, ...children: Node[]) {
   for (const child of children) parent.appendChild(child);
@@ -9,7 +9,7 @@ function appendElements(parent: Node, ...children: Node[]) {
 
 function requiredElement<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector);
-  if (!element) throw new Error(`Missing required LoopFix element: ${selector}`);
+  if (!element) throw new Error(`Missing required Auvrora element: ${selector}`);
   return element;
 }
 
@@ -52,12 +52,12 @@ function findingRow(finding: Finding, selected: boolean, onChange: (checked: boo
   return label;
 }
 
-export function initializeLoopFixApp() {
-  const controller = createLoopFixController();
-  const form = requiredElement<HTMLFormElement>("#loopfix-audit-form");
-  const urlInput = requiredElement<HTMLInputElement>("#loopfix-url");
-  const runButton = requiredElement<HTMLButtonElement>("#loopfix-run");
-  const demoButton = requiredElement<HTMLButtonElement>("#loopfix-demo");
+export function initializeAuvroraApp() {
+  const controller = createAuvroraController();
+  const form = requiredElement<HTMLFormElement>("#auvrora-audit-form");
+  const urlInput = requiredElement<HTMLInputElement>("#auvrora-url");
+  const runButton = requiredElement<HTMLButtonElement>("#auvrora-run");
+  const demoButton = requiredElement<HTMLButtonElement>("#auvrora-demo");
   const findingsPanel = requiredElement<HTMLElement>("#findings-panel");
   const findingsList = requiredElement<HTMLElement>("#findings-list");
   const counts = requiredElement<HTMLElement>("#finding-counts");
@@ -81,7 +81,7 @@ export function initializeLoopFixApp() {
     window.setTimeout(() => { liveRegion.textContent = message; }, 20);
   };
 
-  const renderCounts = (state: LoopFixState) => {
+  const renderCounts = (state: AuvroraState) => {
     counts.replaceChildren();
     if (!state.audit) return;
     for (const severity of ["error", "warning", "notice"] as const) {
@@ -104,7 +104,7 @@ export function initializeLoopFixApp() {
     }
   };
 
-  const render = (state: LoopFixState) => {
+  const render = (state: AuvroraState) => {
     const audit = state.audit;
     findingsPanel.hidden = !audit;
     scopePanel.hidden = !audit;
@@ -262,7 +262,7 @@ export function initializeLoopFixApp() {
   controller.subscribe(render);
   render(controller.getState());
 
-  void registerLoopFixTools(controller).then((registration) => {
+  void registerAuvroraTools(controller).then((registration) => {
     webmcpStatus.textContent = registration.supported
       ? `WebMCP ready · ${registration.count} tools`
       : "WebMCP unavailable in this browser";

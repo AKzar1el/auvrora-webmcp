@@ -5,7 +5,7 @@ import { compareSelectedFindings } from "../src/lib/app/verification.ts";
 
 describe("deterministic demo fixtures", () => {
   it("uses a reserved non-live target and demonstrates mixed verification outcomes", () => {
-    expect(demoBefore.canonicalUrl).toBe("https://demo.loopfix.example/");
+    expect(demoBefore.canonicalUrl).toBe("https://demo.auvrora.example/");
     expect(demoBefore.findings.length >= 4).toBeTruthy();
 
     const selected = [
