@@ -52,7 +52,12 @@ jobs:
                   text = path.read_text(encoding='utf-8')
               except UnicodeDecodeError:
                   continue
-              updated = text.replace('LOOPFIX', 'AUVRORA').replace('LoopFix', 'Auvrora').replace('loopfix', 'auvrora')
+              updated = (
+                  text.replace('loopfix-mcp', 'auvrora-webmcp')
+                      .replace('LOOPFIX', 'AUVRORA')
+                      .replace('LoopFix', 'Auvrora')
+                      .replace('loopfix', 'auvrora')
+              )
               if updated != text:
                   path.write_text(updated, encoding='utf-8')
           PY
