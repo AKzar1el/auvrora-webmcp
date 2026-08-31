@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: loopfix-production-deploy
+  group: auvrora-production-deploy
   cancel-in-progress: false
 
 jobs:
