@@ -20,7 +20,6 @@ jobs:
     timeout-minutes: 15
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -33,6 +32,24 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Resolve Cloudflare account
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
+            echo "CLOUDFLARE_API_TOKEN repository secret is not configured." >&2
+            exit 1
+          fi
+          account_id="$(
+            curl --fail-with-body --silent --show-error \
+              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              https://api.cloudflare.com/client/v4/accounts \
+            | python3 -c 'import json,sys; data=json.load(sys.stdin); items=data.get("result") or []; assert data.get("success") and len(items)==1, "expected exactly one accessible Cloudflare account"; print(items[0]["id"])'
+          )"
+          echo "::add-mask::${account_id}"
+          echo "CLOUDFLARE_ACCOUNT_ID=${account_id}" >> "${GITHUB_ENV}"
 
       - name: Verify and deploy
         run: npm run deploy
