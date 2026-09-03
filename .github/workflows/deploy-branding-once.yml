@@ -20,6 +20,7 @@ jobs:
     timeout-minutes: 15
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      LIVE_URL: https://auvrora-webmcp.tomi-seregi99.workers.dev
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -53,3 +54,16 @@ jobs:
 
       - name: Verify and deploy
         run: npm run deploy
+
+      - name: Verify live branding
+        shell: bash
+        run: |
+          set -euo pipefail
+          cache_bust="branding-${GITHUB_SHA}"
+          page="$(curl --fail --silent --show-error "${LIVE_URL}/?v=${cache_bust}")"
+          grep -F 'src="/auvrora-mark.svg"' <<<"${page}"
+          grep -F 'rel="icon" type="image/svg+xml" href="/favicon.svg"' <<<"${page}"
+          mark="$(curl --fail --silent --show-error "${LIVE_URL}/auvrora-mark.svg?v=${cache_bust}")"
+          favicon="$(curl --fail --silent --show-error "${LIVE_URL}/favicon.svg?v=${cache_bust}")"
+          grep -F '<svg' <<<"${mark}"
+          grep -F 'viewBox="0 0 64 64"' <<<"${favicon}"
