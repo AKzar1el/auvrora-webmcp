@@ -55,9 +55,10 @@ describe("Auvrora brand consistency", () => {
     expect(basename(root)).not.toBe("");
   });
 
-  it("uses Auvrora initials in the visible header mark", async () => {
+  it("uses the final Auvrora logo asset in the visible header mark", async () => {
     const page = await readFile(join(root, "src/pages/index.astro"), "utf8");
-    expect(page).toContain('<span class="brand-mark" aria-hidden="true">AU</span>');
+    expect(page).toContain('<img class="brand-mark" src="/auvrora-mark.svg" alt="" width="34" height="34" />');
+    expect(page).not.toContain('<span class="brand-mark" aria-hidden="true">AU</span>');
     expect(page).not.toContain('<span class="brand-mark" aria-hidden="true">LF</span>');
   });
 });
