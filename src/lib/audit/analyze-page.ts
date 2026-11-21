@@ -7,10 +7,32 @@ export const AUDIT_RULES_VERSION = "2026-08-28.1";
 const SEVERITY_RANK = { error: 0, warning: 1, notice: 2 } as const;
 
 function stripIgnoredMarkup(html: string): string {
-  return html
+  const markup = html
     .replace(/<!--[\s\S]*?-->/g, "")
     .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, "")
     .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, "");
+
+  // Scan complete tags so template-like text in quoted attributes cannot affect nesting.
+  const tags = /<\/?([a-z][\w:-]*)(?=[\t\n\f\r />])(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi;
+  const visible: string[] = [];
+  let depth = 0;
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = tags.exec(markup))) {
+    if (match[1].toLowerCase() !== "template") continue;
+    if (match[0].startsWith("</")) {
+      if (depth === 0) continue;
+      depth -= 1;
+      if (depth === 0) cursor = tags.lastIndex;
+    } else {
+      if (depth === 0) visible.push(markup.slice(cursor, match.index));
+      depth += 1;
+    }
+  }
+
+  if (depth === 0) visible.push(markup.slice(cursor));
+  return visible.join("");
 }
 
 function decodeMinimalEntities(value: string): string {

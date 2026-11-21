@@ -105,6 +105,58 @@ describe("analyzePage", () => {
     expect(result).toContain("missing_canonical");
   });
 
+  it("ignores audit markup throughout nested templates", () => {
+    const html = CLEAN_HTML.replace("</body>", `
+      <TeMpLaTe data-example="> </template>">
+        <h1>Hidden heading</h1><img src="hidden.png">
+        <link rel="canonical" href="https://example.org/hidden">
+        <meta name="robots" content="noindex">
+        <template>
+          <h1>Nested hidden heading</h1><img src="nested.png">
+          <meta name="robots" content="none">
+        </template>
+        <h1>Still hidden</h1><img src="still-hidden.png">
+        <meta name="robots" content="noindex">
+      </TeMpLaTe>
+    </body>`);
+    expect(codes(html)).toEqual([]);
+  });
+
+  it("does not satisfy heading or canonical requirements with template content", () => {
+    const html = CLEAN_HTML
+      .replace('<link rel="canonical" href="https://example.org/">',
+        '<template><link rel="canonical" href="https://example.org/"></template>')
+      .replace("<h1>Example</h1>",
+        "<template><template><h1>Hidden</h1></template><h1>Also hidden</h1></template>");
+    const result = codes(html);
+    expect(result).toContain("missing_h1");
+    expect(result).toContain("missing_canonical");
+    expect(result).not.toContain("multiple_h1");
+  });
+
+  it("preserves visible findings between and after templates", () => {
+    const html = CLEAN_HTML.replace("</body>", `
+      <template><h1>Hidden</h1><template><img src="hidden.png"></template></template>
+      <h1>Second visible heading</h1>
+      <template><meta name="robots" content="noindex"><img src="also-hidden.png"></template>
+      <img src="visible.png"><meta name="robots" content="none">
+    </body>`);
+    const findings = analyzePage(page(html)).findings;
+    expect(findings.find((item) => item.code === "multiple_h1")?.observedEvidence)
+      .toBe("2 <h1> elements were found.");
+    expect(findings.find((item) => item.code === "images_missing_alt")?.observedEvidence)
+      .toBe("1 image element is missing an alt attribute.");
+    expect(findings.map((item) => item.code)).toContain("noindex_detected");
+  });
+
+  it("does not treat template-like attributes or custom element names as templates", () => {
+    const html = CLEAN_HTML.replace("<body>", `<body>
+      <div data-example="<template>"></div>
+      <template-card><img src="visible.png"></template-card>
+      <div data-example="</template>"></div>`);
+    expect(codes(html)).toEqual(["images_missing_alt"]);
+  });
+
   it("uses stable IDs, bounded generated evidence, and deterministic severity ordering", () => {
     const html = "<html><head></head><body><img src='a.png'></body></html>";
     const findings = analyzePage(page(html)).findings;
