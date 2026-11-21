@@ -93,6 +93,21 @@ describe("analyzePage", () => {
     expect(codes(html)).toContain("noindex_detected");
   });
 
+  it.each([
+    ["GoOgLeBoT", "NOINDEX", true],
+    ["BiNgBoT", "NoNe", true],
+    ["googlebot", "none", true],
+    ["bingbot", "index, noindex, follow", true],
+    ["robots", "none", true],
+    ["description", "noindex", false],
+    ["googlebot-news", "none", false],
+    ["bingbot", "index, follow", false],
+    ["googlebot", "noindexing", false],
+  ])("checks noindex only for supported robots names: %s / %s", (name, content, expected) => {
+    const html = CLEAN_HTML.replace("</head>", `<meta NAME="${name}" CONTENT="${content}"></head>`);
+    expect(codes(html).includes("noindex_detected")).toBe(expected);
+  });
+
   it("ignores markup-looking text inside scripts, styles, and comments", () => {
     const html = `<html lang="en"><head>
       <script>const fake = '<title>Fake title with enough characters</title><meta name="description" content="${"x".repeat(100)}">';</script>

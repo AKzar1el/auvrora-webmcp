@@ -150,7 +150,8 @@ export function analyzePage(page: FetchedPage): AuditRun {
   const title = extractTitle(html);
   const description = extractMetaContent(html, "description");
   const viewport = extractMetaContent(html, "viewport");
-  const robots = extractMetaContents(html, "robots")
+  const robots = ["robots", "googlebot", "bingbot"]
+    .flatMap((name) => extractMetaContents(html, name))
     .flatMap((content) => content.split(/[\s,]+/))
     .map((token) => token.toLowerCase())
     .filter(Boolean);
